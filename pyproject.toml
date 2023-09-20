@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "trade-screenshots"
+version = "0.1.0"
+description = ""
+authors = ["fbjarkes <fbjarkes-github.q5706@aleeas.com>"]
+readme = "README.md"
+packages = [{include = "trade_screenshots"}]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+pandas = "^2.1.1"
+finta = "^1.3"
+fire = "^0.5.0"
+plotly = "^5.17.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
