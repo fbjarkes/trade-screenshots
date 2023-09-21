@@ -9,14 +9,13 @@ def main(
     timeframe="5min",
     provider="tv",
     symbols="AAPL",
-    duration=None,
+    duration='09:30-16:00',
     filetype="png",
     trades=None,
 ):
-    symbols = symbols.split(",")
-    if duration:
-        start_time, end_time = duration.split("-")
-        # Process start_time and end_time here if needed
+    symbols = symbols.split(",")    
+    start_time, end_time = duration.split("-")
+    
 
     # Call the processing function for each symbol
     for symbol in symbols:
@@ -27,9 +26,11 @@ def main(
             symbol=symbol,
             trades=trades,
             filetype=filetype,
+            start_time=start_time,
+            end_time=end_time
         )
 
-def process_symbol(start, timeframe, provider, symbol, trades, filetype):
+def process_symbol(start, timeframe, provider, symbol, trades, filetype, start_time, end_time):
     # Implement provider-specific data fetching here
     if provider == 'tv':
         df = utils.get_dataframe_tv(start, timeframe, symbol, PATHS['tv'])
@@ -43,18 +44,14 @@ def process_symbol(start, timeframe, provider, symbol, trades, filetype):
     if df.empty:
         raise Exception(f"Empty DataFrame for symbol {symbol}")
     
-    # Apply technical analysis using Finta
     print(f"{symbol}: Applying TA to {len(df)} rows")
     df = utils.add_ema(df, 10)
     df = utils.add_ema(df, 20)
+
+    dfs = utils.split(df, start_time, end_time)
+    print(f"{symbol}: generating images for {len(dfs)} days")
     
-    print(df)
 
-    # Split DataFrame into subsets for each trading day
-    print('Splitting DataFrame into subsets for each trading day')
-
-    # Generate and save candlestick charts using Plotly
-print('Generating and saving candlestick charts using Plotly')
 
 if __name__ == "__main__":
     fire.Fire(main)
