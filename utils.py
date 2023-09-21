@@ -1,6 +1,8 @@
 import json
 import pandas as pd
 
+from finta import TA
+
 def load_json_data(symbol: str, path: str):
     with open(path) as f:
         json_data = json.load(f)       
@@ -45,3 +47,8 @@ def get_dataframe_tv(start, timeframe, symbol, path):
 def download_dataframe_alpaca(start, timeframe, symbol):
     print(f"Downloading Alpaca data for {symbol} timeframe={timeframe} and start={start}")
     return pd.DataFrame()
+
+
+def add_ema(df, period):
+    df[f"EMA{period}"] = TA.EMA(df, period)
+    return df

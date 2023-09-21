@@ -44,7 +44,11 @@ def process_symbol(start, timeframe, provider, symbol, trades, filetype):
         raise Exception(f"Empty DataFrame for symbol {symbol}")
     
     # Apply technical analysis using Finta
-    print('Applying TA to ', df)
+    print(f"{symbol}: Applying TA to {len(df)} rows")
+    df = utils.add_ema(df, 10)
+    df = utils.add_ema(df, 20)
+    
+    print(df)
 
     # Split DataFrame into subsets for each trading day
     print('Splitting DataFrame into subsets for each trading day')
