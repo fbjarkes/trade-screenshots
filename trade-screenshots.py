@@ -17,12 +17,14 @@ def main(
     filetype="png",
     trades=None,
 ):
-    symbols = symbols.split(",")
+    symbols = list(symbols)
     start_time, end_time = duration.split("-")
 
-    # Call the processing function for each symbol
     for symbol in symbols:
-        process_symbol(start=start, timeframe=timeframe, provider=provider, symbol=symbol, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time)
+        try: 
+            process_symbol(start=start, timeframe=timeframe, provider=provider, symbol=symbol, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time)
+        except Exception as e:
+            print(f"Error processing symbol {symbol}: {e}. Skipping.")
 
 
 def process_symbol(start, timeframe, provider, symbol, trades, filetype, start_time, end_time):
@@ -46,7 +48,7 @@ def process_symbol(start, timeframe, provider, symbol, trades, filetype, start_t
     dfs = utils.split(df, start_time, end_time)
 
     print(f"{symbol}: generating images for {len(dfs)} days")
-    dfs = dfs[-5:]  # Only last two while debugging
+    #dfs = dfs[-5:]
     for i in range(1, len(dfs)):
         today = dfs[i]
         yday = dfs[i - 1]
