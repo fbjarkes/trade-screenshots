@@ -1,6 +1,6 @@
 import json
 import pandas as pd
-
+import plotly.io as pio
 from finta import TA
 
 
@@ -61,3 +61,20 @@ def split(df, start_time, end_time):
         if not filtered_df.empty:
             dfs.append(filtered_df)
     return dfs
+
+
+def write_file(fig, filename, type, width, height):    
+    if type == "html":
+        fig.write_html(f"{filename}.html")
+        print(f"Wrote '{filename}.html'")
+    elif type == "png":
+        pio.write_image(fig, f"{filename}.png", width=width, height=height)
+        print(f"Wrote '{filename}.png'")
+    elif type == 'webp':
+        pio.write_image(fig, f"{filename}.webp")
+        print(f"Wrote '{filename}.webp'")
+    elif type == 'svg':
+        pio.write_image(fig, f"{filename}.svg")
+        print(f"Wrote '{filename}.svg'")
+    else:
+        raise ValueError("Unsupported file type:", type)

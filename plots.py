@@ -1,11 +1,10 @@
 import plotly.graph_objs as go
-import plotly.io as pio
 from plotly.subplots import make_subplots
 import pandas as pd
 import utils_ta
 
 
-def generate_chart(df, symbol, filename, type='png', ta_params=None, or_times=None, daily_levels=None, width=1280, height=800):
+def generate_chart(df, symbol, title, ta_params=None, or_times=None, daily_levels=None):
     candlestick = go.Candlestick(
         x=df.index,
         open=df['Open'],
@@ -50,19 +49,6 @@ def generate_chart(df, symbol, filename, type='png', ta_params=None, or_times=No
     fig.update_layout(shapes=shapes, annotations=annotations)
     fig.update_layout(showlegend=False)
     fig.update_layout(xaxis_rangeslider_visible=False)
-    fig.update_layout(title=filename)
+    fig.update_layout(title=title)
 
-    if type == "html":
-        fig.write_html(f"{filename}.html")
-        print(f"Wrote '{filename}.html'")
-    elif type == "png":
-        pio.write_image(fig, f"{filename}.png", width=width, height=height)
-        print(f"Wrote '{filename}.png'")
-    elif type == 'webp':
-        pio.write_image(fig, f"{filename}.webp")
-        print(f"Wrote '{filename}.webp'")
-    elif type == 'svg':
-        pio.write_image(fig, f"{filename}.svg")
-        print(f"Wrote '{filename}.svg'")
-    else:
-        raise ValueError("Unsupported file type:", type)
+    return fig

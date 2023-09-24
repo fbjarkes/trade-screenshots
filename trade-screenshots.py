@@ -1,3 +1,5 @@
+
+import os
 import fire
 import utils
 import utils_ta
@@ -15,19 +17,23 @@ def main(
     symbols="AAPL",
     duration='09:30-16:00',
     filetype="png",
+    outdir='images',
     trades=None,
 ):
     symbols = list(symbols)
     start_time, end_time = duration.split("-")
 
+    if not os.path.exists(outdir):
+        raise Exception(f"Output directory '{outdir}' does not exist")
+    
     for symbol in symbols:
         try: 
-            process_symbol(start=start, timeframe=timeframe, provider=provider, symbol=symbol, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time)
+            process_symbol(start=start, timeframe=timeframe, provider=provider, symbol=symbol, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
         except Exception as e:
             print(f"Error processing symbol {symbol}: {e}. Skipping.")
 
 
-def process_symbol(start, timeframe, provider, symbol, trades, filetype, start_time, end_time):
+def process_symbol(start, timeframe, provider, symbol, trades, filetype, start_time, end_time, outdir):
     if provider == 'tv':
         df = utils.get_dataframe_tv(start, timeframe, symbol, PATHS['tv'])
     elif provider == 'alpaca-file':
@@ -48,22 +54,23 @@ def process_symbol(start, timeframe, provider, symbol, trades, filetype, start_t
     dfs = utils.split(df, start_time, end_time)
 
     print(f"{symbol}: generating images for {len(dfs)} days")
-    #dfs = dfs[-5:]
+    dfs = dfs[-5:]
     for i in range(1, len(dfs)):
         today = dfs[i]
         yday = dfs[i - 1]
         date = today.index.date[0]
         levels = {'close_1': yday['Close'].iloc[-1], 'high_1': yday['High'].max(), 'low_1': yday['Low'].min()}
         utils_ta.vwap(today)
-        plots.generate_chart(
+        fig = plots.generate_chart(
             today,
             symbol,
             f"{date}-{symbol}",
-            type='png',
             ta_params={key: TA_PARAMS[key] for key in ['VWAP', 'EMA10', 'EMA20', 'EMA50']},
             or_times=('09:30', '10:30'),
             daily_levels=levels,
         )
+        
+        utils.write_file(fig, f"{outdir}/{date}-{symbol}", 'png', width=1280, height=800)
 
     print("done")
 
