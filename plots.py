@@ -1,8 +1,10 @@
 import plotly.graph_objs as go
 import plotly.io as pio
 from plotly.subplots import make_subplots
+import pandas as pd
+import utils_ta
 
-def generate_chart(df, symbol, filename, type='png', ta_params=None, width=1280, height=800):
+def generate_chart(df, symbol, filename, type='png', ta_params=None, or_levels=False, width=1280, height=800):
     candlestick = go.Candlestick(
         x=df.index,
         open=df['Open'],
@@ -23,10 +25,20 @@ def generate_chart(df, symbol, filename, type='png', ta_params=None, width=1280,
         ta_lines.append(line)
     
     fig = go.Figure(data=[candlestick] + ta_lines)
-
+    
+    if or_levels:
+        lowest, highest = utils_ta.or_levels(df)
+        # TODO: a more simple way to select 10:30? e.g. bar 12?
+        fig.update_layout(shapes=[
+            dict(x0=df.index[0], x1=pd.Timestamp(f"{df.index[0].date()} 10:30"), y0=lowest, y1=lowest, line_dash='dash', opacity=0.3),
+            dict(x0=df.index[0], x1=pd.Timestamp(f"{df.index[0].date()} 10:30"), y0=highest, y1=highest, line_dash='dash', opacity=0.3)
+        ])
+        
     # Make chart clean
     fig.update_layout(showlegend=False)
     fig.update_layout(xaxis_rangeslider_visible=False)
+    fig.update_layout(title=filename)
+       
 
     if type == "html":
         fig.write_html(f"{filename}.html")
