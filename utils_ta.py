@@ -23,6 +23,3 @@ def add_ta(symbol, df, ta):
     if 'EMA50' in ta:
         df = ema(df, 50)
     return df
-
-def add_daily_levels(df, yday=None, yyday=None): 
-    return df
