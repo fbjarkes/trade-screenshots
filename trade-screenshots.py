@@ -42,7 +42,7 @@ def main(
         )
 
 def process_symbol(start, timeframe, provider, symbol, trades, filetype, start_time, end_time):
-    # Implement provider-specific data fetching here
+
     if provider == 'tv':
         df = utils.get_dataframe_tv(start, timeframe, symbol, PATHS['tv'])
     elif provider == 'alpaca-file':
@@ -63,7 +63,7 @@ def process_symbol(start, timeframe, provider, symbol, trades, filetype, start_t
     dfs = utils.split(df, start_time, end_time)
 
     print(f"{symbol}: generating images for {len(dfs)} days")
-    t = dfs[-2:]
+    t = dfs[-2:] # Only last two while debugging
     for intraday_df in t:        
         date = intraday_df.index.date[0]        
         plots.generate_chart(intraday_df, symbol, f"{date}-{symbol}", type='png', ta_params={key: TA_PARAMS[key] for key in  ['EMA10', 'EMA20', 'EMA50']})
