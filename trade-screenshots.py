@@ -1,8 +1,19 @@
 import fire
 import utils
+import utils_ta
+import plots
 
 PATHS = {'tv': '~/Bardata/tradingview',
          'alpaca-file': '~/Bardata/alpaca-v2'}
+
+TA_PARAMS = {
+        'VWAP': {'color': 'yellow'},
+        'EMA10':  {'color': 'lightblue'},
+        'EMA20': {'color': 'blue'},
+        'EMA50': {'color': 'darkblue'},
+        'DAILY_LEVEL': {'days': 1},
+        'OR_LEVEL': {'start': '09:30', 'end': '10:30'}
+    }
 
 def main(
     start="2023-01-01",
@@ -45,13 +56,19 @@ def process_symbol(start, timeframe, provider, symbol, trades, filetype, start_t
         raise Exception(f"Empty DataFrame for symbol {symbol}")
     
     print(f"{symbol}: Applying TA to {len(df)} rows")
-    df = utils.add_ema(df, 10)
-    df = utils.add_ema(df, 20)
 
-    dfs = utils.split(df, start_time, end_time)
-    print(f"{symbol}: generating images for {len(dfs)} days")
+    df = utils_ta.add_ta(symbol, df,  ['EMA10', 'EMA20', 'EMA50'])
     
+    print(f"{symbol}: Splitting data into days")
+    dfs = utils.split(df, start_time, end_time)
 
+    print(f"{symbol}: generating images for {len(dfs)} days")
+    t = dfs[-2:]
+    for intraday_df in t:        
+        date = intraday_df.index.date[0]        
+        plots.generate_chart(intraday_df, symbol, f"{date}-{symbol}", type='png', ta_params={key: TA_PARAMS[key] for key in  ['EMA10', 'EMA20', 'EMA50']})
+    
+    print("done")
 
 if __name__ == "__main__":
     fire.Fire(main)

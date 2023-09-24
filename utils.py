@@ -48,11 +48,6 @@ def download_dataframe_alpaca(start, timeframe, symbol):
     print(f"Downloading Alpaca data for {symbol} timeframe={timeframe} and start={start}")
     return pd.DataFrame()
 
-
-def add_ema(df, period):
-    df[f"EMA{period}"] = TA.EMA(df, period)
-    return df
-
 def split(df, start_time, end_time):
     start = pd.to_datetime(start_time).time()
     end = pd.to_datetime(end_time).time()
@@ -60,7 +55,8 @@ def split(df, start_time, end_time):
     dfs = []
     for date, group_df in df.groupby(df.index.date):
         filtered_df = group_df.between_time(start_time, end_time)
-        dfs.append(filtered_df)
+        if not filtered_df.empty:
+            dfs.append(filtered_df)
     return dfs
 
     
