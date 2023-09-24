@@ -6,7 +6,8 @@ def ema(df, period):
     return df
 
 def vwap(df):
-    return df # TODO
+    df['VWAP'] = TA.VWAP(df)
+    return df
 
 def or_levels(df):
     df_or = df.between_time('09:30', '10:30')

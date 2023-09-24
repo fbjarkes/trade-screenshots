@@ -65,8 +65,9 @@ def process_symbol(start, timeframe, provider, symbol, trades, filetype, start_t
     print(f"{symbol}: generating images for {len(dfs)} days")
     t = dfs[-2:] # Only last two while debugging
     for intraday_df in t:        
-        date = intraday_df.index.date[0]        
-        plots.generate_chart(intraday_df, symbol, f"{date}-{symbol}", type='png', ta_params={key: TA_PARAMS[key] for key in  ['EMA10', 'EMA20', 'EMA50']}, or_levels=True)
+        date = intraday_df.index.date[0]
+        utils_ta.vwap(intraday_df)      
+        plots.generate_chart(intraday_df, symbol, f"{date}-{symbol}", type='png', ta_params={key: TA_PARAMS[key] for key in  ['VWAP', 'EMA10', 'EMA20', 'EMA50']}, or_levels=True)
     
     print("done")
 
