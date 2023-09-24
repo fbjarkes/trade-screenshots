@@ -9,8 +9,8 @@ def vwap(df):
     df['VWAP'] = TA.VWAP(df)
     return df
 
-def or_levels(df):
-    df_or = df.between_time('09:30', '10:30')
+def or_levels(df, or_times):
+    df_or = df.between_time(or_times[0], or_times[1])
     return df_or['Low'].min(), df_or['High'].max()
 
 def add_ta(symbol, df, ta):

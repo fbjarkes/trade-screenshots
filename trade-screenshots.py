@@ -11,8 +11,7 @@ TA_PARAMS = {
         'EMA10':  {'color': 'lightblue'},
         'EMA20': {'color': 'blue'},
         'EMA50': {'color': 'darkblue'},
-        'DAILY_LEVEL': {'days': 1},
-        'OR_LEVELS': {'start': '09:30', 'end': '10:30'}
+        'DAILY_LEVEL': {'days': 1}
     }
 
 def main(
@@ -67,7 +66,7 @@ def process_symbol(start, timeframe, provider, symbol, trades, filetype, start_t
     for intraday_df in t:        
         date = intraday_df.index.date[0]
         utils_ta.vwap(intraday_df)      
-        plots.generate_chart(intraday_df, symbol, f"{date}-{symbol}", type='png', ta_params={key: TA_PARAMS[key] for key in  ['VWAP', 'EMA10', 'EMA20', 'EMA50']}, or_levels=True)
+        plots.generate_chart(intraday_df, symbol, f"{date}-{symbol}", type='png', ta_params={key: TA_PARAMS[key] for key in  ['VWAP', 'EMA10', 'EMA20', 'EMA50']}, or_times=('09:30', '10:30'))
     
     print("done")
 
