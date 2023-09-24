@@ -5,13 +5,16 @@ def ema(df, period):
     df[f"EMA{period}"] = TA.EMA(df, period)
     return df
 
+
 def vwap(df):
     df['VWAP'] = TA.VWAP(df)
     return df
 
+
 def or_levels(df, or_times):
     df_or = df.between_time(or_times[0], or_times[1])
     return df_or['Low'].min(), df_or['High'].max()
+
 
 def add_ta(symbol, df, ta):
     if 'VWAP' in ta:

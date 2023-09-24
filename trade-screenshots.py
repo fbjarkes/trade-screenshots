@@ -3,16 +3,10 @@ import utils
 import utils_ta
 import plots
 
-PATHS = {'tv': '~/Bardata/tradingview',
-         'alpaca-file': '~/Bardata/alpaca-v2'}
+PATHS = {'tv': '~/Bardata/tradingview', 'alpaca-file': '~/Bardata/alpaca-v2'}
 
-TA_PARAMS = {
-        'VWAP': {'color': 'yellow'},
-        'EMA10':  {'color': 'lightblue'},
-        'EMA20': {'color': 'blue'},
-        'EMA50': {'color': 'darkblue'},
-        'DAILY_LEVEL': {'days': 1}
-    }
+TA_PARAMS = {'VWAP': {'color': 'yellow'}, 'EMA10': {'color': 'lightblue'}, 'EMA20': {'color': 'blue'}, 'EMA50': {'color': 'darkblue'}, 'DAILY_LEVEL': {'days': 1}}
+
 
 def main(
     start="2023-01-01",
@@ -23,25 +17,15 @@ def main(
     filetype="png",
     trades=None,
 ):
-    symbols = symbols.split(",")    
+    symbols = symbols.split(",")
     start_time, end_time = duration.split("-")
-    
 
     # Call the processing function for each symbol
     for symbol in symbols:
-        process_symbol(
-            start=start,
-            timeframe=timeframe,
-            provider=provider,
-            symbol=symbol,
-            trades=trades,
-            filetype=filetype,
-            start_time=start_time,
-            end_time=end_time
-        )
+        process_symbol(start=start, timeframe=timeframe, provider=provider, symbol=symbol, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time)
+
 
 def process_symbol(start, timeframe, provider, symbol, trades, filetype, start_time, end_time):
-
     if provider == 'tv':
         df = utils.get_dataframe_tv(start, timeframe, symbol, PATHS['tv'])
     elif provider == 'alpaca-file':
@@ -50,32 +34,37 @@ def process_symbol(start, timeframe, provider, symbol, trades, filetype, start_t
         df = utils.download_dataframe_alpaca(start, timeframe, symbol)
     else:
         raise ValueError(f"Unknown provider: {provider}")
-    
+
     if df.empty:
         raise Exception(f"Empty DataFrame for symbol {symbol}")
-    
+
     print(f"{symbol}: Applying TA to {len(df)} rows")
 
-    df = utils_ta.add_ta(symbol, df,  ['EMA10', 'EMA20', 'EMA50'])
-    
+    df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50'])
+
     print(f"{symbol}: Splitting data into days")
     dfs = utils.split(df, start_time, end_time)
 
     print(f"{symbol}: generating images for {len(dfs)} days")
-    dfs = dfs[-5:] # Only last two while debugging
+    dfs = dfs[-5:]  # Only last two while debugging
     for i in range(1, len(dfs)):
         today = dfs[i]
-        yday = dfs[i-1]
+        yday = dfs[i - 1]
         date = today.index.date[0]
-        levels = {            
-            'close_1': yday['Close'].iloc[-1],
-            'high_1': yday['High'].max(),
-            'low_1': yday['Low'].min()
-        }
+        levels = {'close_1': yday['Close'].iloc[-1], 'high_1': yday['High'].max(), 'low_1': yday['Low'].min()}
         utils_ta.vwap(today)
-        plots.generate_chart(today, symbol, f"{date}-{symbol}", type='png', ta_params={key: TA_PARAMS[key] for key in  ['VWAP', 'EMA10', 'EMA20', 'EMA50']}, or_times=('09:30', '10:30'), daily_levels=levels)
-    
+        plots.generate_chart(
+            today,
+            symbol,
+            f"{date}-{symbol}",
+            type='png',
+            ta_params={key: TA_PARAMS[key] for key in ['VWAP', 'EMA10', 'EMA20', 'EMA50']},
+            or_times=('09:30', '10:30'),
+            daily_levels=levels,
+        )
+
     print("done")
+
 
 if __name__ == "__main__":
     fire.Fire(main)
