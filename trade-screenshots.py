@@ -1,4 +1,6 @@
 
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 import os
 import fire
 import utils
@@ -26,14 +28,28 @@ def main(
     if not os.path.exists(outdir):
         raise Exception(f"Output directory '{outdir}' does not exist")
     
-    for symbol in symbols:
-        try: 
-            process_symbol(start=start, timeframe=timeframe, provider=provider, symbol=symbol, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
-        except Exception as e:
-            print(f"Error processing symbol {symbol}: {e}. Skipping.")
+    #for symbol in symbols:
+    # try: 
+    #         process_symbol(symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
+    #     except Exception as e:
+    #         print(f"Error processing symbol {symbol}: {e}. Skipping.")
+    with ThreadPoolExecutor() as executor:
+        #func = partial(process_symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
+        def func(symbol):
+            try:
+                return process_symbol(symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
+            except Exception as e:
+                print(f"Error processing symbol {symbol}: {e}. Skipping.")
+                return None
+        
+        results = list(executor.map(func, symbols))
+    
+    # TODO: async write files from results here
 
 
-def process_symbol(start, timeframe, provider, symbol, trades, filetype, start_time, end_time, outdir):
+
+def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_time, end_time, outdir):
+    print("== Processing symbol", symbol)
     if provider == 'tv':
         df = utils.get_dataframe_tv(start, timeframe, symbol, PATHS['tv'])
     elif provider == 'alpaca-file':
@@ -54,7 +70,7 @@ def process_symbol(start, timeframe, provider, symbol, trades, filetype, start_t
     dfs = utils.split(df, start_time, end_time)
 
     print(f"{symbol}: generating images for {len(dfs)} days")
-    dfs = dfs[-5:]
+    #dfs = dfs[-5:]
     for i in range(1, len(dfs)):
         today = dfs[i]
         yday = dfs[i - 1]
@@ -70,7 +86,7 @@ def process_symbol(start, timeframe, provider, symbol, trades, filetype, start_t
             daily_levels=levels,
         )
         
-        utils.write_file(fig, f"{outdir}/{date}-{symbol}", 'png', width=1280, height=800)
+        utils.write_file(fig, f"{outdir}/{symbol}-{date}", 'png', width=1280, height=800)
 
     print("done")
 
