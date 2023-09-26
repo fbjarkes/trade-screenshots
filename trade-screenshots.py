@@ -18,20 +18,22 @@ TA_PARAMS = {'VWAP': {'color': 'yellow'}, 'EMA10': {'color': 'lightblue'},
 
 
 def main(
-    start="2023-01-01",
+    start="2023-01-01", # TODO: start date needed?
     timeframe="5min",
     provider="tv",
     symbols="AAPL",
-    trading_hour='09:30-16:00',    
+    trading_hour='09:30-16:00', # Assume OHLC data is in market time for symbol in question
     filetype="png",
     outdir='images',
-    trades=None,
+    trades=None, #TODO: process trades.csv
 ):
-    
     if isinstance(symbols, tuple):
         symbols = list(symbols)        
+    elif ',' in symbols:
+        symbols = symbols.split(',')
     else:
         symbols = [symbols]
+    
     start_time, end_time = trading_hour.split("-")
 
     if not os.path.exists(outdir):
