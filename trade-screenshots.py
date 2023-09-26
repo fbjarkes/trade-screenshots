@@ -22,7 +22,11 @@ def main(
     outdir='images',
     trades=None,
 ):
-    symbols = list(symbols)
+    
+    if isinstance(symbols, tuple):
+        symbols = list(symbols)        
+    else:
+        symbols = [symbols]
     start_time, end_time = duration.split("-")
 
     if not os.path.exists(outdir):
@@ -49,7 +53,6 @@ def main(
 
 
 def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_time, end_time, outdir):
-    print("== Processing symbol", symbol)
     if provider == 'tv':
         df = utils.get_dataframe_tv(start, timeframe, symbol, PATHS['tv'])
     elif provider == 'alpaca-file':
@@ -70,7 +73,7 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
     dfs = utils.split(df, start_time, end_time)
 
     print(f"{symbol}: generating images for {len(dfs)} days")
-    #dfs = dfs[-5:]
+    dfs = dfs[-5:]
     for i in range(1, len(dfs)):
         today = dfs[i]
         yday = dfs[i - 1]
@@ -85,8 +88,7 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
             or_times=('09:30', '10:30'),
             daily_levels=levels,
         )
-        
-        utils.write_file(fig, f"{outdir}/{symbol}-{date}", 'png', width=1280, height=800)
+    
 
     print("done")
 
