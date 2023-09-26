@@ -1,5 +1,6 @@
+import time
 import traceback
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from functools import partial
 import os
 import fire
@@ -16,6 +17,14 @@ TA_PARAMS = {'VWAP': {'color': 'yellow'}, 'EMA10': {'color': 'lightblue'},
              'BB_LOWER': {'color': 'lightgrey'}, 
              'DAILY_LEVEL': {'days': 1}}
 
+
+def try_process_symbol(fun, symbol):
+    try:
+        fun(symbol)
+    except Exception as e:                
+        print(f"Error processing symbol {symbol}: {e}. Skipping.")
+        traceback.print_exc()
+        return None
 
 def main(
     start="2023-01-01", # TODO: start date needed?
@@ -44,21 +53,18 @@ def main(
     #         process_symbol(symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
     #     except Exception as e:
     #         print(f"Error processing symbol {symbol}: {e}. Skipping.")
-    with ThreadPoolExecutor() as executor:
-        #func = partial(process_symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
-        def func(symbol):
-            try:
-                return process_symbol(symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
-            except Exception as e:                
-                print(f"Error processing symbol {symbol}: {e}. Skipping.")
-                traceback.print_exc()
-                return None
-        
-        results = list(executor.map(func, symbols))
+    with ProcessPoolExecutor() as executor:        
+        # def func(symbol):
+        #     try:
+        #         return process_symbol(symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
+        #     except Exception as e:                
+        #         print(f"Error processing symbol {symbol}: {e}. Skipping.")
+        #         traceback.print_exc()
+        #         return None
+        func = partial(process_symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
+        try_func = partial(try_process_symbol, func)
+        results = list(executor.map(try_func, symbols))
     
-    # TODO: async write files from results here
-
-
 
 def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_time, end_time, outdir):
     if provider == 'tv':
@@ -81,13 +87,14 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
     dfs = utils.split(df, start_time, end_time)
 
     print(f"{symbol}: generating images for {len(dfs)} days")
-    dfs = dfs[-5:]
+    #dfs = dfs[-5:]
     for i in range(1, len(dfs)):
         today = dfs[i]
         yday = dfs[i - 1]
         date = today.index.date[0]
         levels = {'close_1': yday['Close'].iloc[-1], 'high_1': yday['High'].max(), 'low_1': yday['Low'].min()}
-        utils_ta.vwap(today) # Add VWAP on intraday df
+        utils_ta.vwap(today) # Add VWAP on intraday df        
+        
         fig = plots.generate_chart(
             today,
             symbol,
@@ -96,6 +103,7 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
             or_times=('09:30', '10:30'),
             daily_levels=levels,
         )
+        
         utils.write_file(fig, f"{outdir}/{symbol}-{date}", filetype, 1600, 900)
 
     print("done")
