@@ -15,6 +15,11 @@ def or_levels(df, or_times):
     df_or = df.between_time(or_times[0], or_times[1])
     return df_or['Low'].min(), df_or['High'].max()
 
+def bbands(df):
+    bb = TA.BBANDS(df, period=20, std_multiplier=2.0)
+    df['BB_UPPER'] = bb['BB_UPPER']
+    df['BB_LOWER'] = bb['BB_LOWER']    
+    return df
 
 def add_ta(symbol, df, ta):
     if 'VWAP' in ta:
@@ -25,4 +30,6 @@ def add_ta(symbol, df, ta):
         df = ema(df, 20)
     if 'EMA50' in ta:
         df = ema(df, 50)
+    if 'BB' in ta:
+        df = bbands(df)
     return df

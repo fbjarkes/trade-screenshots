@@ -4,7 +4,7 @@ import pandas as pd
 import utils_ta
 
 
-def generate_chart(df, symbol, title, ta_params=None, or_times=None, daily_levels=None):
+def generate_chart(df, symbol, title, plot_indicators=None, or_times=None, daily_levels=None):
     candlestick = go.Candlestick(
         x=df.index,
         open=df['Open'],
@@ -15,12 +15,12 @@ def generate_chart(df, symbol, title, ta_params=None, or_times=None, daily_level
     )
 
     ta_lines = []
-    for ta in ta_params.keys():
+    for ta in plot_indicators.keys():
         line = go.Scatter(
             x=df.index,
             y=df[ta],
             name=ta,
-            line=dict(color=ta_params[ta]['color']),
+            line=dict(color=plot_indicators[ta]['color']),
         )
         ta_lines.append(line)
 

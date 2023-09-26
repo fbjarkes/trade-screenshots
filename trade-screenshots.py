@@ -1,4 +1,4 @@
-
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 import os
@@ -9,7 +9,12 @@ import plots
 
 PATHS = {'tv': '~/Bardata/tradingview', 'alpaca-file': '~/Bardata/alpaca-v2'}
 
-TA_PARAMS = {'VWAP': {'color': 'yellow'}, 'EMA10': {'color': 'lightblue'}, 'EMA20': {'color': 'blue'}, 'EMA50': {'color': 'darkblue'}, 'DAILY_LEVEL': {'days': 1}}
+TA_PARAMS = {'VWAP': {'color': 'yellow'}, 'EMA10': {'color': 'lightblue'}, 
+             'EMA20': {'color': 'blue'}, 
+             'EMA50': {'color': 'darkblue'}, 
+             'BB_UPPER': {'color': 'lightgrey'}, 
+             'BB_LOWER': {'color': 'lightgrey'}, 
+             'DAILY_LEVEL': {'days': 1}}
 
 
 def main(
@@ -17,7 +22,7 @@ def main(
     timeframe="5min",
     provider="tv",
     symbols="AAPL",
-    duration='09:30-16:00',
+    trading_hour='09:30-16:00',    
     filetype="png",
     outdir='images',
     trades=None,
@@ -27,7 +32,7 @@ def main(
         symbols = list(symbols)        
     else:
         symbols = [symbols]
-    start_time, end_time = duration.split("-")
+    start_time, end_time = trading_hour.split("-")
 
     if not os.path.exists(outdir):
         raise Exception(f"Output directory '{outdir}' does not exist")
@@ -42,8 +47,9 @@ def main(
         def func(symbol):
             try:
                 return process_symbol(symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
-            except Exception as e:
+            except Exception as e:                
                 print(f"Error processing symbol {symbol}: {e}. Skipping.")
+                traceback.print_exc()
                 return None
         
         results = list(executor.map(func, symbols))
@@ -67,7 +73,7 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
 
     print(f"{symbol}: Applying TA to {len(df)} rows")
 
-    df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50'])
+    df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50', 'BB'])
 
     print(f"{symbol}: Splitting data into days")
     dfs = utils.split(df, start_time, end_time)
@@ -79,16 +85,16 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
         yday = dfs[i - 1]
         date = today.index.date[0]
         levels = {'close_1': yday['Close'].iloc[-1], 'high_1': yday['High'].max(), 'low_1': yday['Low'].min()}
-        utils_ta.vwap(today)
+        utils_ta.vwap(today) # Add VWAP on intraday df
         fig = plots.generate_chart(
             today,
             symbol,
             f"{date}-{symbol}",
-            ta_params={key: TA_PARAMS[key] for key in ['VWAP', 'EMA10', 'EMA20', 'EMA50']},
+            plot_indicators={key: TA_PARAMS[key] for key in ['VWAP', 'EMA10', 'EMA20', 'EMA50', 'BB_UPPER', 'BB_LOWER']},
             or_times=('09:30', '10:30'),
             daily_levels=levels,
         )
-    
+        utils.write_file(fig, f"{outdir}/{symbol}-{date}", filetype, 1600, 900)
 
     print("done")
 
