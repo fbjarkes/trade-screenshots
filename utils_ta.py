@@ -1,4 +1,5 @@
 from finta import TA
+import pandas as pd
 
 
 def ema(df, period):
@@ -10,6 +11,17 @@ def vwap(df):
     df['VWAP'] = TA.VWAP(df)
     return df
 
+def mid(df):
+    # Assume df is 1 intraday, RTH only    
+    max_high_values = [df['High'].iloc[0]]
+    min_low_values = [df['Low'].iloc[0]]
+    for index, row in df.iloc[1:].iterrows():
+        max_high_values.append(max(max_high_values[-1], row['High']))
+        min_low_values.append(min(min_low_values[-1], row['Low']))
+
+    mid = (pd.Series(max_high_values, index=df.index) + pd.Series(min_low_values, index=df.index)) / 2
+    df['Mid'] = mid
+    return df
 
 def or_levels(df, or_times):
     df_or = df.between_time(or_times[0], or_times[1])

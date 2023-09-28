@@ -14,7 +14,8 @@ TA_PARAMS = {'VWAP': {'color': 'yellow'}, 'EMA10': {'color': 'lightblue'},
              'EMA20': {'color': 'blue'}, 
              'EMA50': {'color': 'darkblue'}, 
              'BB_UPPER': {'color': 'lightgrey'}, 
-             'BB_LOWER': {'color': 'lightgrey'}, 
+             'BB_LOWER': {'color': 'lightgrey'},
+             'Mid': {'color': 'red'}, 
              'DAILY_LEVEL': {'days': 1}}
 
 
@@ -87,19 +88,21 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
     dfs = utils.split(df, start_time, end_time)
 
     print(f"{symbol}: generating images for {len(dfs)} days")
-    #dfs = dfs[-5:]
+    dfs = dfs[-5:]
     for i in range(1, len(dfs)):
         today = dfs[i]
         yday = dfs[i - 1]
         date = today.index.date[0]
         levels = {'close_1': yday['Close'].iloc[-1], 'high_1': yday['High'].max(), 'low_1': yday['Low'].min()}
-        utils_ta.vwap(today) # Add VWAP on intraday df        
+        # Add VWAP and Mid on intraday df       
+        utils_ta.vwap(today)
+        utils_ta.mid(today)
         
         fig = plots.generate_chart(
             today,
             symbol,
             f"{date}-{symbol}",
-            plot_indicators={key: TA_PARAMS[key] for key in ['VWAP', 'EMA10', 'EMA20', 'EMA50', 'BB_UPPER', 'BB_LOWER']},
+            plot_indicators={key: TA_PARAMS[key] for key in ['VWAP', 'EMA10', 'EMA20', 'EMA50', 'BB_UPPER', 'BB_LOWER', 'Mid']},
             or_times=('09:30', '10:30'),
             daily_levels=levels,
         )
