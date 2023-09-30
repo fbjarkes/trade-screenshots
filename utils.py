@@ -51,16 +51,25 @@ def download_dataframe_alpaca(start, timeframe, symbol):
     return pd.DataFrame()
 
 
-def split(df, start_time, end_time):
+def split(df, start_time, end_time, eth_values):
     start = pd.to_datetime(start_time).time()
     end = pd.to_datetime(end_time).time()
 
     dfs = []
+    ah_df = None       
     for date, group_df in df.groupby(df.index.date):
-        filtered_df = group_df.between_time(start_time, end_time)
-        if not filtered_df.empty:
+        filtered_df = group_df.between_time(start_time, end_time, inclusive='left')
+        pm_df = group_df.between_time('04:00', start_time, inclusive='left')
+        if not filtered_df.empty:            
             dfs.append(filtered_df)
-    return dfs
+            if ah_df is not None:
+                eth_df = pd.concat([ah_df, pm_df])
+            else:
+                eth_df = pm_df
+            eth_values[date] = {'low': eth_df['Low'].min(), 'high': eth_df['High'].max()}
+        
+        ah_df = group_df.between_time(end_time, '20:00')
+    return dfs    
 
 
 def write_file(fig, filename, type, width, height):    

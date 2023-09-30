@@ -31,7 +31,7 @@ def main(
     start="2023-01-01", # TODO: start date needed?
     timeframe="5min",
     provider="tv",
-    symbols="AAPL",
+    symbols="2023-09-30_NVDA",
     trading_hour='09:30-16:00', # Assume OHLC data is in market time for symbol in question
     filetype="png",
     outdir='images',
@@ -85,7 +85,8 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
     df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50', 'BB'])
 
     print(f"{symbol}: Splitting data into days")
-    dfs = utils.split(df, start_time, end_time)
+    eth_values = {}
+    dfs = utils.split(df, start_time, end_time, eth_values)
 
     print(f"{symbol}: generating images for {len(dfs)} days")
     dfs = dfs[-5:]
@@ -93,8 +94,9 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
         today = dfs[i]
         yday = dfs[i - 1]
         date = today.index.date[0]
-        levels = {'close_1': yday['Close'].iloc[-1], 'high_1': yday['High'].max(), 'low_1': yday['Low'].min()}
-        # Add VWAP and Mid on intraday df       
+        levels = {'close_1': yday['Close'].iloc[-1], 'high_1': yday['High'].max(), 'low_1': yday['Low'].min(),
+                  'eth_low': eth_values[date]['low'], 'eth_high': eth_values[date]['high']}
+        print(date, levels)
         utils_ta.vwap(today)
         utils_ta.mid(today)
         

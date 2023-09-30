@@ -34,6 +34,9 @@ def bbands(df):
     return df
 
 def add_ta(symbol, df, ta):
+    # check if any row with time < 09:30 is present:
+    if df.index[0].time() < pd.to_datetime('09:30').time():
+        print("Warning: applying TA with AH/PM present")
     if 'VWAP' in ta:
         df = vwap(df)
     if 'EMA10' in ta:
