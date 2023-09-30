@@ -82,7 +82,7 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
 
     print(f"{symbol}: Applying TA to {len(df)} rows")
 
-    df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50', 'BB'])
+    df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50', 'BB'], start_time, end_time)
 
     print(f"{symbol}: Splitting data into days")
     eth_values = {}
@@ -96,7 +96,7 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
         date = today.index.date[0]
         levels = {'close_1': yday['Close'].iloc[-1], 'high_1': yday['High'].max(), 'low_1': yday['Low'].min(),
                   'eth_low': eth_values[date]['low'], 'eth_high': eth_values[date]['high']}
-        print(date, levels)
+        print(date, levels) # TODO: AH/PM levels
         utils_ta.vwap(today)
         utils_ta.mid(today)
         
