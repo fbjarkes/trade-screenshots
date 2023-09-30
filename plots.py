@@ -1,3 +1,4 @@
+from functools import partial
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 import pandas as pd
@@ -5,6 +6,8 @@ import utils_ta
 
 
 def generate_chart(df, symbol, title, plot_indicators=None, or_times=None, daily_levels=None):
+    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01, row_heights=[0.8, 0.2])
+
     candlestick = go.Candlestick(
         x=df.index,
         open=df['Open'],
@@ -13,7 +16,13 @@ def generate_chart(df, symbol, title, plot_indicators=None, or_times=None, daily
         close=df['Close'],
         name=symbol,
     )
-
+    volume = go.Bar(
+        x=df.index,
+        y=df['Volume'],
+        name='Volume',
+        marker=dict(color='blue')
+    )
+    
     ta_lines = []
     for ta in plot_indicators.keys():
         line = go.Scatter(
@@ -23,9 +32,13 @@ def generate_chart(df, symbol, title, plot_indicators=None, or_times=None, daily
             line=dict(color=plot_indicators[ta]['color']),
         )
         ta_lines.append(line)
+    
 
-    fig = go.Figure(data=[candlestick] + ta_lines)
-
+    fig.add_trace(candlestick, row=1, col=1)
+    for line in ta_lines:
+        fig.add_trace(line, row=1, col=1)
+    fig.add_trace(volume, row=2, col=1)
+    
     shapes = []
     if or_times:
         lowest, highest = utils_ta.or_levels(df, or_times)
