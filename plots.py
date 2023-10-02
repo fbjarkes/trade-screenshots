@@ -39,9 +39,13 @@ def generate_trade_chart(trade, df, title, plot_indicators, config):
         fig.add_trace(line, row=1, col=1)
     fig.add_trace(volume, row=2, col=1)
     
-    # TODO: Place annotation above if short and below if long
-    fig.add_annotation(x=trade.start_dt, y=trade.entry_price, text="Entry", showarrow=True, arrowhead=1)
-    fig.add_annotation(x=trade.end_dt, y=trade.exit_price, text=f"Exit {trade.pnl:.1f}", showarrow=True, arrowhead=1)
+    if trade.value < 0:
+        v_align = -100
+    else:
+        v_align = 100
+    
+    fig.add_annotation(x=trade.start_dt, y=trade.entry_price, text=f"Entry ({trade.value:.0f})", showarrow=True, arrowhead=1, ay=v_align, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14))
+    fig.add_annotation(x=trade.end_dt, y=trade.exit_price, text=f"Exit ({trade.pnl:.1f})", showarrow=True, arrowhead=1, ay=v_align, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14))
         
     fig.update_layout(showlegend=False)
     fig.update_layout(xaxis_rangeslider_visible=False)
