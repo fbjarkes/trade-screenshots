@@ -1,8 +1,30 @@
+from dataclasses import dataclass
+from decimal import Decimal
 import json
 import pandas as pd
 import plotly.io as pio
 from finta import TA
 
+
+@dataclass
+class Trade:
+    symbol: str   
+    start_dt: str
+    end_dt: str
+    pnl: Decimal
+    value: Decimal
+
+def parse_trades(csv_file):
+    trades = []
+    with open(csv_file) as f:
+        for line in f.readlines()[1:]:
+            row = line.split(',')
+            try: 
+                trades.append(Trade(symbol=row[2], start_dt=row[3], end_dt=row[4], pnl=Decimal(row[5]), value=Decimal(row[6])))
+            except Exception as e:
+                print(f"Error parsing trade: {e}")
+    return trades
+    
 
 def load_json_data(symbol: str, path: str):
     with open(path) as f:
