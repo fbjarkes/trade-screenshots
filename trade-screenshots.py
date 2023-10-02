@@ -31,11 +31,12 @@ def main(
     start="2023-01-01", # TODO: start date needed?
     timeframe="5min",
     provider="tv",
-    symbols="2023-09-30_NVDA",
+    symbols="2023-10-02_NVDA",
     trading_hour='09:30-16:00', # Assume OHLC data is in market time for symbol in question
     filetype="png",
     outdir='images',
-    trades_file='trades.csv'
+    #trades_file='trades.csv'
+    trades_file=None
 ):
     if isinstance(symbols, tuple):
         symbols = list(symbols)        
@@ -46,6 +47,8 @@ def main(
     
     if trades_file:
         trades = utils.parse_trades(trades_file)
+    else:
+        trades = None
       
     start_time, end_time = trading_hour.split("-")
 
@@ -93,9 +96,9 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
     if provider == 'tv':
         df = utils.get_dataframe_tv(start, timeframe, symbol, PATHS['tv'])
     elif provider == 'alpaca-file':
-        df = utils.get_dataframe_alpaca(start, timeframe, symbol, PATHS['alpaca-file'])
+        df = utils.get_dataframe_alpaca(start, timeframe, symbol, PATHS['alpaca-file']) #TODO: not implemented
     elif provider == 'alpaca':
-        df = utils.download_dataframe_alpaca(start, timeframe, symbol)
+        df = utils.download_dataframe_alpaca(start, timeframe, symbol) #TODO: not implemented
     else:
         raise ValueError(f"Unknown provider: {provider}")
 
@@ -112,13 +115,14 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
     dfs = utils.split(df, start_time, end_time, eth_values)
 
     print(f"{symbol}: generating images for {len(dfs)} days")
+    dfs = dfs[:5]
     for i in range(1, len(dfs)):
         today = dfs[i]
         yday = dfs[i - 1]
         date = today.index.date[0]
         levels = {'close_1': yday['Close'].iloc[-1], 'high_1': yday['High'].max(), 'low_1': yday['Low'].min(),
                   'eth_low': eth_values[date]['low'], 'eth_high': eth_values[date]['high']}
-        print(date, levels) # TODO: AH/PM levels
+
         utils_ta.vwap(today)
         utils_ta.mid(today)
         
