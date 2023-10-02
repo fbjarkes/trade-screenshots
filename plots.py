@@ -32,13 +32,16 @@ def generate_trade_chart(trade, df, title, plot_indicators, config):
             name=ta,
             line=dict(color=config[ta]['color']),
         )
-        ta_lines.append(line)
+        ta_lines.append(line) 
     
-
     fig.add_trace(candlestick, row=1, col=1)
     for line in ta_lines:
         fig.add_trace(line, row=1, col=1)
     fig.add_trace(volume, row=2, col=1)
+    
+    # TODO: Place annotation above if short and below if long
+    fig.add_annotation(x=trade.start_dt, y=trade.entry_price, text="Entry", showarrow=True, arrowhead=1)
+    fig.add_annotation(x=trade.end_dt, y=trade.exit_price, text=f"Exit {trade.pnl:.1f}", showarrow=True, arrowhead=1)
         
     fig.update_layout(showlegend=False)
     fig.update_layout(xaxis_rangeslider_visible=False)
