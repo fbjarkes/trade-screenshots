@@ -33,16 +33,16 @@ def bbands(df):
     df['BB_LOWER'] = bb['BB_LOWER']    
     return df
 
-def add_ta(symbol, df, ta, start_time, end_time):
-    df = df.between_time(start_time, end_time, inclusive='left').copy()    
+def add_ta(symbol, df, ta, start_time, end_time):    
+    df_ta = df.between_time(start_time, end_time, inclusive='left').copy()    
     if 'VWAP' in ta:
-        df = vwap(df)
+        df_ta = vwap(df_ta)
     if 'EMA10' in ta:
-        df = ema(df, 10)
+        df_ta = ema(df_ta, 10)
     if 'EMA20' in ta:
-        df = ema(df, 20)
+        df_ta = ema(df_ta, 20)
     if 'EMA50' in ta:
-        df = ema(df, 50)
+        df_ta = ema(df_ta, 50)
     if 'BB' in ta:
-        df = bbands(df)
-    return df
+        df_ta = bbands(df_ta)
+    return df_ta.combine_first(df)
