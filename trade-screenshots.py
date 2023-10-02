@@ -64,7 +64,7 @@ def main(
                 raise Exception(f"Empty DataFrame for symbol {symbol}")
             dfs_map[symbol] = df
             
-        for trade in trades[0:5]:
+        for trade in trades:
             df = dfs_map[trade.symbol]            
             df = df.loc[trade.start_dt[0:10]:trade.end_dt[0:10]] # Just use the date part as a string            
             fig = plots.generate_trade_chart(trade, df, title=f"{trades_file}-{trade.symbol}-{trade.start_dt[0:10]}", 
@@ -104,6 +104,7 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
 
     print(f"{symbol}: Applying TA to {len(df)} rows")
 
+    #TODO: add mid,vwap, daily/ah/pm levels and store in dataframe as constant values? and write test for it?
     df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50', 'BB'], start_time, end_time)
 
     print(f"{symbol}: Splitting data into days")
@@ -111,7 +112,6 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
     dfs = utils.split(df, start_time, end_time, eth_values)
 
     print(f"{symbol}: generating images for {len(dfs)} days")
-    dfs = dfs[-5:]
     for i in range(1, len(dfs)):
         today = dfs[i]
         yday = dfs[i - 1]
