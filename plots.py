@@ -103,10 +103,14 @@ def generate_chart(df, symbol, title, plot_indicators=None, or_times=None, daily
     shapes.append(dict(x0=df.index[0], x1=df.index[-1], y0=daily_levels['close_1'], y1=daily_levels['close_1'], line_dash='dot', line_color='green', opacity=0.4))
     shapes.append(dict(x0=df.index[0], x1=df.index[-1], y0=daily_levels['low_1'], y1=daily_levels['low_1'], line_dash='longdash', line_color='green', opacity=0.3))
     shapes.append(dict(x0=df.index[0], x1=df.index[-1], y0=daily_levels['high_1'], y1=daily_levels['high_1'], line_dash='longdash', line_color='green', opacity=0.3))
+    shapes.append(dict(x0=df.index[0], x1=df.index[-1], y0=daily_levels['eth_high'], y1=daily_levels['eth_high'], line_dash='longdash', line_color='blue', opacity=0.2))
+    shapes.append(dict(x0=df.index[0], x1=df.index[-1], y0=daily_levels['eth_low'], y1=daily_levels['eth_low'], line_dash='longdash', line_color='blue', opacity=0.2))
     annotations = [
         dict(x=df.index[0], y=daily_levels['close_1'], xref='x', yref='y', showarrow=False, xanchor='left', text='yclose'),
         dict(x=df.index[0], y=daily_levels['high_1'], xref='x', yref='y', showarrow=False, xanchor='left', text='yhigh'),
         dict(x=df.index[0], y=daily_levels['low_1'], xref='x', yref='y', showarrow=False, xanchor='left', text='ylow'),
+        dict(x=df.index[0], y=daily_levels['eth_high'], xref='x', yref='y', showarrow=False, xanchor='left', text='eth_high'),
+        dict(x=df.index[0], y=daily_levels['eth_low'], xref='x', yref='y', showarrow=False, xanchor='left', text='eth_low'),
     ]
 
     fig.update_layout(shapes=shapes, annotations=annotations)
