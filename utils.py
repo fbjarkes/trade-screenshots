@@ -14,6 +14,8 @@ class Trade:
     end_dt: str
     pnl: Decimal
     value: Decimal
+    entry_price: Decimal
+    exit_price: Decimal
 
 def parse_trades(csv_file):
     trades = []
@@ -23,7 +25,8 @@ def parse_trades(csv_file):
             try:                 
                 # start_dt = datetime.strptime(row[3], '%Y-%m-%d %H:%M:%S')
                 # end_dt = datetime.strptime(row[4], '%Y-%m-%d %H:%M:%S')
-                trades.append(Trade(symbol=row[2], start_dt=row[3], end_dt=row[4], pnl=Decimal(row[5]), value=Decimal(row[6])))
+                trades.append(Trade(symbol=row[2], start_dt=row[3], end_dt=row[4], pnl=Decimal(row[5]), value=Decimal(row[6]),
+                                    entry_price=Decimal(row[7]), exit_price=Decimal(row[8])))
             except Exception as e:
                 print(f"Error parsing trade: {e}")
     return trades
