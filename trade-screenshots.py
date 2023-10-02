@@ -63,14 +63,16 @@ def main(
             if df.empty:
                 raise Exception(f"Empty DataFrame for symbol {symbol}")
             dfs_map[symbol] = df
-        
-        for trade in trades:
+            
+        for trade in trades[0:5]:
             df = dfs_map[trade.symbol]            
-            df = df.loc[trade.start_dt[0:10]:trade.end_dt[0:10]] # Just use the date part as a string
+            df = df.loc[trade.start_dt[0:10]:trade.end_dt[0:10]] # Just use the date part as a string            
             fig = plots.generate_trade_chart(trade, df, title=f"{trades_file}-{trade.symbol}-{trade.start_dt[0:10]}", 
                                               plot_indicators=['EMA10', 'EMA20', 'EMA50', 'BB_UPPER', 'BB_LOWER'],
                                               config=TA_PARAMS)
-            utils.write_file(fig, f"{outdir}/trades/{trade.symbol}-{trade.start_dt[:10]}", filetype, 1600, 900)
+            # format date like "2023-01-01_1500"
+            suffix = trade.start_dt[:16].replace(' ', '_').replace(':','')
+            utils.write_file(fig, f"{outdir}/trades/{trade.symbol}-{suffix}", filetype, 1600, 900)
 
     else:        
         with ProcessPoolExecutor() as executor:        
