@@ -1,8 +1,51 @@
 from functools import partial
+import functools
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 import pandas as pd
 import utils_ta
+
+
+def generate_trade_chart(trade, df, title, plot_indicators, config):
+    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01, row_heights=[0.8, 0.2])
+    
+    candlestick = go.Candlestick(
+        x=df.index,
+        open=df['Open'],
+        high=df['High'],
+        low=df['Low'],
+        close=df['Close'],
+        name=trade.symbol,
+    )
+    volume = go.Bar(
+        x=df.index,
+        y=df['Volume'],
+        name='Volume',
+        marker=dict(color='blue')
+    )
+    
+    ta_lines = []
+    for ta in plot_indicators:
+        line = go.Scatter(
+            x=df.index,
+            y=df[ta],
+            name=ta,
+            line=dict(color=config[ta]['color']),
+        )
+        ta_lines.append(line)
+    
+
+    fig.add_trace(candlestick, row=1, col=1)
+    for line in ta_lines:
+        fig.add_trace(line, row=1, col=1)
+    fig.add_trace(volume, row=2, col=1)
+        
+    fig.update_layout(showlegend=False)
+    fig.update_layout(xaxis_rangeslider_visible=False)
+    fig.update_layout(title=title)
+    
+    return fig
+
 
 
 def generate_chart(df, symbol, title, plot_indicators=None, or_times=None, daily_levels=None):

@@ -35,7 +35,7 @@ def main(
     trading_hour='09:30-16:00', # Assume OHLC data is in market time for symbol in question
     filetype="png",
     outdir='images',
-    trades=None, #TODO: process trades.csv
+    trades_file='trades.csv'
 ):
     if isinstance(symbols, tuple):
         symbols = list(symbols)        
@@ -44,29 +44,49 @@ def main(
     else:
         symbols = [symbols]
     
+    if trades_file:
+        trades = utils.parse_trades(trades_file)
+      
     start_time, end_time = trading_hour.split("-")
 
     if not os.path.exists(outdir):
         raise Exception(f"Output directory '{outdir}' does not exist")
-    
-    #for symbol in symbols:
-    # try: 
-    #         process_symbol(symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
-    #     except Exception as e:
-    #         print(f"Error processing symbol {symbol}: {e}. Skipping.")
-    with ProcessPoolExecutor() as executor:        
-        # def func(symbol):
-        #     try:
-        #         return process_symbol(symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
-        #     except Exception as e:                
-        #         print(f"Error processing symbol {symbol}: {e}. Skipping.")
-        #         traceback.print_exc()
-        #         return None
-        func = partial(process_symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
-        try_func = partial(try_process_symbol, func)
-        results = list(executor.map(try_func, symbols))
+
+    if trades:
+        symbols = list(set([trade.symbol for trade in trades]))
+        
+        dfs_map = {}
+        for symbol in symbols:
+            df = utils.get_dataframe_tv(start, timeframe, symbol, PATHS['tv'])
+            print(f"{symbol}: Applying TA to {len(df)} rows")
+            df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50', 'BB'], start_time, end_time)
+            if df.empty:
+                raise Exception(f"Empty DataFrame for symbol {symbol}")
+            dfs_map[symbol] = df
+        
+        for trade in trades:
+            df = dfs_map[trade.symbol]            
+            df = df.loc[trade.start_dt[0:10]:trade.end_dt[0:10]] # Just use the date part as a string
+            fig = plots.generate_trade_chart(trade, df, title=f"{trades_file}-{trade.symbol}-{trade.start_dt[0:10]}", 
+                                              plot_indicators=['EMA10', 'EMA20', 'EMA50', 'BB_UPPER', 'BB_LOWER'],
+                                              config=TA_PARAMS)
+            utils.write_file(fig, f"{outdir}/trades/{trade.symbol}-{trade.start_dt[:10]}", filetype, 1600, 900)
+
+    else:        
+        with ProcessPoolExecutor() as executor:        
+            # def func(symbol):
+            #     try:
+            #         return process_symbol(symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
+            #     except Exception as e:                
+            #         print(f"Error processing symbol {symbol}: {e}. Skipping.")
+            #         traceback.print_exc()
+            #         return None
+            func = partial(process_symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
+            try_func = partial(try_process_symbol, func)
+            results = list(executor.map(try_func, symbols))
     
 
+#TODO: use partial decorator ? @functools.partial()
 def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_time, end_time, outdir):
     if provider == 'tv':
         df = utils.get_dataframe_tv(start, timeframe, symbol, PATHS['tv'])
