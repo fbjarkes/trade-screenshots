@@ -7,6 +7,7 @@ import fire
 import utils
 import utils_ta
 import plots
+import pandas as pd
 
 PATHS = {'tv': '~/Bardata/tradingview', 'alpaca-file': '~/Bardata/alpaca-v2'}
 
@@ -36,7 +37,8 @@ def main(
     filetype="png",
     outdir='images',
     #trades_file='trades.csv'
-    trades_file=None
+    trades_file=None,
+    days=0
 ):
     if isinstance(symbols, tuple):
         symbols = list(symbols)        
@@ -49,8 +51,11 @@ def main(
         trades = utils.parse_trades(trades_file)
     else:
         trades = None
-      
-    start_time, end_time = trading_hour.split("-")
+    
+    if trading_hour:
+        start_time, end_time = trading_hour.split("-")
+    else:
+        start_time, end_time = None, None
 
     if not os.path.exists(outdir):
         raise Exception(f"Output directory '{outdir}' does not exist")
@@ -61,15 +66,19 @@ def main(
         dfs_map = {}
         for symbol in symbols:
             df = utils.get_dataframe_tv(start, timeframe, symbol, PATHS['tv'])
-            print(f"{symbol}: Applying TA to {len(df)} rows")
-            df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50', 'BB'], start_time, end_time)
             if df.empty:
-                raise Exception(f"Empty DataFrame for symbol {symbol}")
-            dfs_map[symbol] = df
-            
+                print(f"Empty DataFrame for symbol {symbol}. Skipping")
+            else:
+                print(f"{symbol}: Applying TA to {len(df)} rows")
+                df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50', 'BB'], start_time, end_time)            
+                dfs_map[symbol] = df
+        
+        trades = trades[:5]
         for trade in trades:
-            df = dfs_map[trade.symbol]            
-            df = df.loc[trade.start_dt[0:10]:trade.end_dt[0:10]] # Just use the date part as a string            
+            df = dfs_map[trade.symbol]
+            start_date = pd.to_datetime(trade.start_dt).date() - pd.Timedelta(days=days)            
+            end_date = pd.to_datetime(trade.end_dt).date() + pd.Timedelta(days=days)
+            df = df.loc[f"{start_date}":f"{end_date}"]
             fig = plots.generate_trade_chart(trade, df, title=f"{trades_file}-{trade.symbol}-{trade.start_dt[0:10]}", 
                                               plot_indicators=['EMA10', 'EMA20', 'EMA50', 'BB_UPPER', 'BB_LOWER'],
                                               config=TA_PARAMS)
@@ -114,8 +123,7 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
     eth_values = {}
     dfs = utils.split(df, start_time, end_time, eth_values)
 
-    print(f"{symbol}: generating images for {len(dfs)} days")
-    dfs = dfs[:5]
+    print(f"{symbol}: generating images for {len(dfs)} days")    
     for i in range(1, len(dfs)):
         today = dfs[i]
         yday = dfs[i - 1]
