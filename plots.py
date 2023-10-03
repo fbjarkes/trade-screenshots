@@ -50,6 +50,8 @@ def generate_trade_chart(trade, df, title, plot_indicators, config):
     fig.update_layout(showlegend=False)
     fig.update_layout(xaxis_rangeslider_visible=False)
     fig.update_layout(title=title)
+    #fig.update_layout(xaxis_type='category') # TODO: screws up the annotation placement
+
     
     return fig
 

@@ -73,7 +73,6 @@ def main(
                 df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50', 'BB'], start_time, end_time)            
                 dfs_map[symbol] = df
         
-        trades = trades[:5]
         for trade in trades:
             df = dfs_map[trade.symbol]
             start_date = pd.to_datetime(trade.start_dt).date() - pd.Timedelta(days=days)            
