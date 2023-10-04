@@ -30,7 +30,7 @@ def try_process_symbol(fun, symbol):
 
 def main(
     start="2023-01-01", # TODO: start date needed?
-    timeframe="5min",
+    timeframe="5min", # only allow '<integer>min'
     provider="tv",
     symbols="2023-10-02_NVDA",
     trading_hour='09:30-16:00', # Assume OHLC data is in market time for symbol in question
@@ -78,7 +78,7 @@ def main(
             start_date = pd.to_datetime(trade.start_dt).date() - pd.Timedelta(days=days)            
             end_date = pd.to_datetime(trade.end_dt).date() + pd.Timedelta(days=days)
             df = df.loc[f"{start_date}":f"{end_date}"]
-            fig = plots.generate_trade_chart(trade, df, title=f"{trades_file}-{trade.symbol}-{trade.start_dt[0:10]}", 
+            fig = plots.generate_trade_chart(trade, df, tf=timeframe, title=f"{trades_file}-{trade.symbol}-{trade.start_dt[0:10]}", 
                                               plot_indicators=['EMA10', 'EMA20', 'EMA50', 'BB_UPPER', 'BB_LOWER'],
                                               config=TA_PARAMS)
             # format date like "2023-01-01_1500"
@@ -133,6 +133,7 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
         utils_ta.vwap(today)
         utils_ta.mid(today)
         
+        # TODO: option to plot 1-2 days before today (for stocks in play with specific dates)
         fig = plots.generate_chart(
             today,
             symbol,

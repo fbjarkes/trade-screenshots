@@ -6,16 +6,16 @@ import pandas as pd
 import utils_ta
 
 
-def generate_trade_chart(trade, df, title, plot_indicators, config):
+def generate_trade_chart(trade, df, tf, title, plot_indicators, config):
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01, row_heights=[0.8, 0.2])
-    
+
     candlestick = go.Candlestick(
         x=df.index,
         open=df['Open'],
         high=df['High'],
         low=df['Low'],
         close=df['Close'],
-        name=trade.symbol,
+        name=trade.symbol
     )
     volume = go.Bar(
         x=df.index,
@@ -50,7 +50,15 @@ def generate_trade_chart(trade, df, title, plot_indicators, config):
     fig.update_layout(showlegend=False)
     fig.update_layout(xaxis_rangeslider_visible=False)
     fig.update_layout(title=title)
-    #fig.update_layout(xaxis_type='category') # TODO: screws up the annotation placement
+    #fig.update_layout(xaxis_type='date', xaxis=dict(dtick=180*60*1000))
+    dt_all = pd.date_range(start=df.index[0],end=df.index[-1], freq = tf)
+    dt_breaks = [d for d in dt_all.strftime("%Y-%m-%d %H:%M:%S").tolist() if not d in df.index]
+    #dt_breaks = pd.to_datetime(['2023-09-29 17:00:00', '2023-09-29 20:00:00', '2023-09-29 23:00:00', '2023-09-30 02:00:00', '2023-09-30 05:00:00', 
+    #                            '2023-09-30 08:00:00', '2023-09-30 11:00:00', '2023-09-30 14:00:00', '2023-09-30 17:00:00', '2023-09-30 20:00:00',
+    #                            '2023-09-30 23:00:00', '2023-10-01 02:00:00', '2023-10-01 05:00:00', '2023-10-01 08:00:00', '2023-10-01 11:00:00', '2023-10-01 14:00:00'])
+    minutes = int(tf[:-3])
+    fig.update_xaxes(rangebreaks=[dict(dvalue=minutes*60*1000, values=dt_breaks)] )
+
 
     
     return fig
