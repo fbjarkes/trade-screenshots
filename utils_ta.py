@@ -1,18 +1,19 @@
 from finta import TA
 import pandas as pd
+from typing import List, Tuple
 
 
-def ema(df, period):
+def ema(df: pd.DataFrame, period: int) -> pd.DataFrame:
     df[f"EMA{period}"] = TA.EMA(df, period)
     return df
 
 
-def vwap(df):
+def vwap(df: pd.DataFrame) -> pd.DataFrame:
     df['VWAP'] = TA.VWAP(df)
     return df
 
 
-def mid(df):
+def mid(df: pd.DataFrame) -> pd.DataFrame:
     # Assume df is 1 intraday, RTH only
     max_high_values = [df['High'].iloc[0]]
     min_low_values = [df['Low'].iloc[0]]
@@ -25,19 +26,19 @@ def mid(df):
     return df
 
 
-def or_levels(df, or_times):
+def or_levels(df: pd.DataFrame, or_times: Tuple[str, str]) -> Tuple[float, float]:
     df_or = df.between_time(or_times[0], or_times[1])
     return df_or['Low'].min(), df_or['High'].max()
 
 
-def bbands(df):
+def bbands(df: pd.DataFrame) -> pd.DataFrame:
     bb = TA.BBANDS(df, period=20, std_multiplier=2.0)
     df['BB_UPPER'] = bb['BB_UPPER']
     df['BB_LOWER'] = bb['BB_LOWER']
     return df
 
 
-def add_ta(symbol, df, ta, start_time, end_time):
+def add_ta(symbol: str, df: pd.DataFrame, ta: List[str], start_time: str, end_time: str) -> pd.DataFrame:
     if start_time and end_time:
         df_ta = df.between_time(start_time, end_time, inclusive='left').copy()
     else:

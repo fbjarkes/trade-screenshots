@@ -5,6 +5,7 @@ import json
 import pandas as pd
 import plotly.io as pio
 from finta import TA
+from typing import Any, List, Dict, Union
 
 
 @dataclass
@@ -18,7 +19,7 @@ class Trade:
     exit_price: Decimal
 
 
-def parse_trades(csv_file):
+def parse_trades(csv_file: str) -> List[Trade]:
     trades = []
     with open(csv_file) as f:
         for line in f.readlines()[1:]:
@@ -34,13 +35,13 @@ def parse_trades(csv_file):
     return trades
 
 
-def load_json_data(symbol: str, path: str):
+def load_json_data(symbol: str, path: str) -> Union[Dict[str, List[Dict[str, Union[str, float]]]], None]:
     with open(path) as f:
         json_data = json.load(f)
         return json_data.get(symbol)
 
 
-def process_json_data(data: dict, symbol: str):
+def process_json_data(data: Dict[str, List[Dict[str, Union[str, float]]]], symbol: str) -> Union[pd.DataFrame, None]:
     if data:
         df = pd.DataFrame(data, columns=['DateTime', 'Open', 'High', 'Low', 'Close', 'Volume'])
         df.set_index('DateTime', inplace=True)
@@ -61,7 +62,7 @@ def get_dataframe_alpaca(start, timeframe, symbol, path):
     return process_json_data(data, symbol)
 
 
-def get_dataframe_tv(start, timeframe, symbol, path):
+def get_dataframe_tv(start: str, timeframe: str, symbol: str, path: str) -> Union[pd.DataFrame, None]:
     file_path = f"{path}/{timeframe}/{symbol}.csv"
     print(f"{symbol}: parsing tradingview data '{file_path}'")
     try:
@@ -76,12 +77,12 @@ def get_dataframe_tv(start, timeframe, symbol, path):
     return pd.DataFrame()
 
 
-def download_dataframe_alpaca(start, timeframe, symbol):
+def download_dataframe_alpaca(start: str, timeframe: str, symbol: str) -> pd.DataFrame:
     print(f"Downloading Alpaca data for {symbol} timeframe={timeframe} and start={start}")
     return pd.DataFrame()
 
 
-def split(df, start_time, end_time, eth_values):
+def split(df: pd.DataFrame, start_time: str, end_time: str, eth_values: Dict[str, Dict[str, Union[float, str]]]) -> List[pd.DataFrame]:
     start = pd.to_datetime(start_time).time()
     end = pd.to_datetime(end_time).time()
 
@@ -102,7 +103,7 @@ def split(df, start_time, end_time, eth_values):
     return dfs
 
 
-def write_file(fig, filename, type, width, height):
+def write_file(fig: Any, filename: str, type: str, width: int, height: int) -> None:
     if type == "html":
         fig.write_html(f"{filename}.html")
         print(f"Wrote '{filename}.html'")
