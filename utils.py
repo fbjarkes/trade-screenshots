@@ -17,20 +17,22 @@ class Trade:
     entry_price: Decimal
     exit_price: Decimal
 
+
 def parse_trades(csv_file):
     trades = []
     with open(csv_file) as f:
         for line in f.readlines()[1:]:
             row = line.split(',')
-            try:                 
+            try:
                 # start_dt = datetime.strptime(row[3], '%Y-%m-%d %H:%M:%S')
                 # end_dt = datetime.strptime(row[4], '%Y-%m-%d %H:%M:%S')
-                trades.append(Trade(symbol=row[2], start_dt=row[3], end_dt=row[4], pnl=Decimal(row[5]), value=Decimal(row[6]),
-                                    entry_price=Decimal(row[7]), exit_price=Decimal(row[8])))
+                trades.append(
+                    Trade(symbol=row[2], start_dt=row[3], end_dt=row[4], pnl=Decimal(row[5]), value=Decimal(row[6]), entry_price=Decimal(row[7]), exit_price=Decimal(row[8]))
+                )
             except Exception as e:
                 print(f"Error parsing trade: {e}")
     return trades
-    
+
 
 def load_json_data(symbol: str, path: str):
     with open(path) as f:
@@ -84,23 +86,23 @@ def split(df, start_time, end_time, eth_values):
     end = pd.to_datetime(end_time).time()
 
     dfs = []
-    ah_df = None       
+    ah_df = None
     for date, group_df in df.groupby(df.index.date):
         filtered_df = group_df.between_time(start_time, end_time, inclusive='left')
         pm_df = group_df.between_time('04:00', start_time, inclusive='left')
-        if not filtered_df.empty:            
+        if not filtered_df.empty:
             dfs.append(filtered_df)
             if ah_df is not None:
                 eth_df = pd.concat([ah_df, pm_df])
             else:
                 eth_df = pm_df
             eth_values[date] = {'low': eth_df['Low'].min(), 'high': eth_df['High'].max()}
-        
+
         ah_df = group_df.between_time(end_time, '20:00')
-    return dfs    
+    return dfs
 
 
-def write_file(fig, filename, type, width, height):    
+def write_file(fig, filename, type, width, height):
     if type == "html":
         fig.write_html(f"{filename}.html")
         print(f"Wrote '{filename}.html'")

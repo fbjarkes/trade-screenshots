@@ -11,47 +11,51 @@ import pandas as pd
 
 PATHS = {'tv': '~/Bardata/tradingview', 'alpaca-file': '~/Bardata/alpaca-v2'}
 
-TA_PARAMS = {'VWAP': {'color': 'yellow'}, 'EMA10': {'color': 'lightblue'}, 
-             'EMA20': {'color': 'blue'}, 
-             'EMA50': {'color': 'darkblue'}, 
-             'BB_UPPER': {'color': 'lightgrey'}, 
-             'BB_LOWER': {'color': 'lightgrey'},
-             'Mid': {'color': 'red'}, 
-             'DAILY_LEVEL': {'days': 1}}
+TA_PARAMS = {
+    'VWAP': {'color': 'yellow'},
+    'EMA10': {'color': 'lightblue'},
+    'EMA20': {'color': 'blue'},
+    'EMA50': {'color': 'darkblue'},
+    'BB_UPPER': {'color': 'lightgrey'},
+    'BB_LOWER': {'color': 'lightgrey'},
+    'Mid': {'color': 'red'},
+    'DAILY_LEVEL': {'days': 1},
+}
 
 
 def try_process_symbol(fun, symbol):
     try:
         fun(symbol)
-    except Exception as e:                
+    except Exception as e:
         print(f"Error processing symbol {symbol}: {e}. Skipping.")
         traceback.print_exc()
         return None
 
+
 def main(
-    start="2023-01-01", # TODO: start date needed?
-    timeframe="5min", # only allow '<integer>min'
+    start="2023-01-01",  # TODO: start date needed?
+    timeframe="5min",  # only allow '<integer>min'
     provider="tv",
     symbols="2023-10-02_NVDA",
-    trading_hour='09:30-16:00', # Assume OHLC data is in market time for symbol in question
+    trading_hour='09:30-16:00',  # Assume OHLC data is in market time for symbol in question
     filetype="png",
     outdir='images',
-    #trades_file='trades.csv'
+    # trades_file='trades.csv'
     trades_file=None,
-    days=0
+    days=0,
 ):
     if isinstance(symbols, tuple):
-        symbols = list(symbols)        
+        symbols = list(symbols)
     elif ',' in symbols:
         symbols = symbols.split(',')
     else:
         symbols = [symbols]
-    
+
     if trades_file:
         trades = utils.parse_trades(trades_file)
     else:
         trades = None
-    
+
     if trading_hour:
         start_time, end_time = trading_hour.split("-")
     else:
@@ -62,7 +66,7 @@ def main(
 
     if trades:
         symbols = list(set([trade.symbol for trade in trades]))
-        
+
         dfs_map = {}
         for symbol in symbols:
             df = utils.get_dataframe_tv(start, timeframe, symbol, PATHS['tv'])
@@ -70,43 +74,50 @@ def main(
                 print(f"Empty DataFrame for symbol {symbol}. Skipping")
             else:
                 print(f"{symbol}: Applying TA to {len(df)} rows")
-                df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50', 'BB'], start_time, end_time)            
+                df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50', 'BB'], start_time, end_time)
                 dfs_map[symbol] = df
-        
+
         for trade in trades:
             df = dfs_map[trade.symbol]
-            start_date = pd.to_datetime(trade.start_dt).date() - pd.Timedelta(days=days)            
+            start_date = pd.to_datetime(trade.start_dt).date() - pd.Timedelta(days=days)
             end_date = pd.to_datetime(trade.end_dt).date() + pd.Timedelta(days=days)
             df = df.loc[f"{start_date}":f"{end_date}"]
-            fig = plots.generate_trade_chart(trade, df, tf=timeframe, title=f"{trades_file}-{trade.symbol}-{trade.start_dt[0:10]}", 
-                                              plot_indicators=['EMA10', 'EMA20', 'EMA50', 'BB_UPPER', 'BB_LOWER'],
-                                              config=TA_PARAMS)
+            fig = plots.generate_trade_chart(
+                trade,
+                df,
+                tf=timeframe,
+                title=f"{trades_file}-{trade.symbol}-{trade.start_dt[0:10]}",
+                plot_indicators=['EMA10', 'EMA20', 'EMA50', 'BB_UPPER', 'BB_LOWER'],
+                config=TA_PARAMS,
+            )
             # format date like "2023-01-01_1500"
-            suffix = trade.start_dt[:16].replace(' ', '_').replace(':','')
+            suffix = trade.start_dt[:16].replace(' ', '_').replace(':', '')
             utils.write_file(fig, f"{outdir}/trades/{trade.symbol}-{suffix}", filetype, 1600, 900)
 
-    else:        
-        with ProcessPoolExecutor() as executor:        
+    else:
+        with ProcessPoolExecutor() as executor:
             # def func(symbol):
             #     try:
             #         return process_symbol(symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
-            #     except Exception as e:                
+            #     except Exception as e:
             #         print(f"Error processing symbol {symbol}: {e}. Skipping.")
             #         traceback.print_exc()
             #         return None
-            func = partial(process_symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
+            func = partial(
+                process_symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir
+            )
             try_func = partial(try_process_symbol, func)
             results = list(executor.map(try_func, symbols))
-    
 
-#TODO: use partial decorator ? @functools.partial()
+
+# TODO: use partial decorator ? @functools.partial()
 def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_time, end_time, outdir):
     if provider == 'tv':
         df = utils.get_dataframe_tv(start, timeframe, symbol, PATHS['tv'])
     elif provider == 'alpaca-file':
-        df = utils.get_dataframe_alpaca(start, timeframe, symbol, PATHS['alpaca-file']) #TODO: not implemented
+        df = utils.get_dataframe_alpaca(start, timeframe, symbol, PATHS['alpaca-file'])  # TODO: not implemented
     elif provider == 'alpaca':
-        df = utils.download_dataframe_alpaca(start, timeframe, symbol) #TODO: not implemented
+        df = utils.download_dataframe_alpaca(start, timeframe, symbol)  # TODO: not implemented
     else:
         raise ValueError(f"Unknown provider: {provider}")
 
@@ -115,24 +126,29 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
 
     print(f"{symbol}: Applying TA to {len(df)} rows")
 
-    #TODO: add mid,vwap, daily/ah/pm levels and store in dataframe as constant values? and write test for it?
+    # TODO: add mid,vwap, daily/ah/pm levels and store in dataframe as constant values? and write test for it?
     df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50', 'BB'], start_time, end_time)
 
     print(f"{symbol}: Splitting data into days")
     eth_values = {}
     dfs = utils.split(df, start_time, end_time, eth_values)
 
-    print(f"{symbol}: generating images for {len(dfs)} days")    
+    print(f"{symbol}: generating images for {len(dfs)} days")
     for i in range(1, len(dfs)):
         today = dfs[i]
         yday = dfs[i - 1]
         date = today.index.date[0]
-        levels = {'close_1': yday['Close'].iloc[-1], 'high_1': yday['High'].max(), 'low_1': yday['Low'].min(),
-                  'eth_low': eth_values[date]['low'], 'eth_high': eth_values[date]['high']}
+        levels = {
+            'close_1': yday['Close'].iloc[-1],
+            'high_1': yday['High'].max(),
+            'low_1': yday['Low'].min(),
+            'eth_low': eth_values[date]['low'],
+            'eth_high': eth_values[date]['high'],
+        }
 
         utils_ta.vwap(today)
         utils_ta.mid(today)
-        
+
         # TODO: option to plot 1-2 days before today (for stocks in play with specific dates)
         fig = plots.generate_chart(
             today,
@@ -142,7 +158,7 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
             or_times=('09:30', '10:30'),
             daily_levels=levels,
         )
-        
+
         utils.write_file(fig, f"{outdir}/{symbol}-{date}", filetype, 1600, 900)
 
     print("done")

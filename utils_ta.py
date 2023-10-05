@@ -11,8 +11,9 @@ def vwap(df):
     df['VWAP'] = TA.VWAP(df)
     return df
 
+
 def mid(df):
-    # Assume df is 1 intraday, RTH only    
+    # Assume df is 1 intraday, RTH only
     max_high_values = [df['High'].iloc[0]]
     min_low_values = [df['Low'].iloc[0]]
     for index, row in df.iloc[1:].iterrows():
@@ -23,19 +24,22 @@ def mid(df):
     df['Mid'] = mid
     return df
 
+
 def or_levels(df, or_times):
     df_or = df.between_time(or_times[0], or_times[1])
     return df_or['Low'].min(), df_or['High'].max()
 
+
 def bbands(df):
     bb = TA.BBANDS(df, period=20, std_multiplier=2.0)
     df['BB_UPPER'] = bb['BB_UPPER']
-    df['BB_LOWER'] = bb['BB_LOWER']    
+    df['BB_LOWER'] = bb['BB_LOWER']
     return df
 
-def add_ta(symbol, df, ta, start_time, end_time): 
+
+def add_ta(symbol, df, ta, start_time, end_time):
     if start_time and end_time:
-        df_ta = df.between_time(start_time, end_time, inclusive='left').copy()    
+        df_ta = df.between_time(start_time, end_time, inclusive='left').copy()
     else:
         df_ta = df
     if 'VWAP' in ta:
