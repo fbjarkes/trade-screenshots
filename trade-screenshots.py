@@ -42,29 +42,43 @@ def main(
     outdir='images',
     # trades_file='trades.csv'
     trades_file=None,
+    symbols_file=None,
     days=0,
 ):
-    if isinstance(symbols, tuple):
-        symbols = list(symbols)
-    elif ',' in symbols:
-        symbols = symbols.split(',')
-    else:
-        symbols = [symbols]
-
-    if trades_file:
-        trades = utils.parse_trades(trades_file)
-    else:
-        trades = None
-
+    if symbols and (trades_file or symbols_file):
+        raise ValueError("symbols, trades_file, and symbols_file are mutually exclusive")
+    
+    if not os.path.exists(outdir):
+        raise Exception(f"Output directory '{outdir}' does not exist")
+    
     if trading_hour:
         start_time, end_time = trading_hour.split("-")
     else:
         start_time, end_time = None, None
+    
+    if symbols:
+        if isinstance(symbols, tuple):
+            symbols = list(symbols)
+        elif ',' in symbols:
+            symbols = symbols.split(',')
+        else:
+            symbols = [symbols]
+        with ProcessPoolExecutor() as executor:
+            # def func(symbol):
+            #     try:
+            #         return process_symbol(symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
+            #     except Exception as e:
+            #         print(f"Error processing symbol {symbol}: {e}. Skipping.")
+            #         traceback.print_exc()
+            #         return None
+            func = partial(
+                process_symbol, start=start, timeframe=timeframe, provider=provider, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir
+            )
+            try_func = partial(try_process_symbol, func)
+            results = list(executor.map(try_func, symbols))
 
-    if not os.path.exists(outdir):
-        raise Exception(f"Output directory '{outdir}' does not exist")
-
-    if trades:
+    elif trades_file:
+        trades = utils.parse_trades(trades_file)
         symbols = list(set([trade.symbol for trade in trades]))
 
         dfs_map = {}
@@ -92,26 +106,18 @@ def main(
             )
             # format date like "2023-01-01_1500"
             suffix = trade.start_dt[:16].replace(' ', '_').replace(':', '')
-            utils.write_file(fig, f"{outdir}/trades/{trade.symbol}-{suffix}", filetype, 1600, 900)
-
+            utils.write_file(fig, f"{outdir}/trades/{trade.symbol}-{suffix}", filetype, 1600, 900)     
+    
+    elif symbols_file:
+        # Add daily/ah/pm levels etc as constant values in df?
+        pass #TODO
+    
     else:
-        with ProcessPoolExecutor() as executor:
-            # def func(symbol):
-            #     try:
-            #         return process_symbol(symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
-            #     except Exception as e:
-            #         print(f"Error processing symbol {symbol}: {e}. Skipping.")
-            #         traceback.print_exc()
-            #         return None
-            func = partial(
-                process_symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir
-            )
-            try_func = partial(try_process_symbol, func)
-            results = list(executor.map(try_func, symbols))
+        raise ValueError("symbols, trades_file, or symbols_file must be provided")
 
 
 # TODO: use partial decorator ? @functools.partial()
-def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_time, end_time, outdir):
+def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end_time, outdir):
     if provider == 'tv':
         df = utils.get_dataframe_tv(start, timeframe, symbol, PATHS['tv'])
     elif provider == 'alpaca-file':
@@ -132,8 +138,9 @@ def process_symbol(symbol, start, timeframe, provider, trades, filetype, start_t
     print(f"{symbol}: Splitting data into days")
     eth_values = {}
     dfs = utils.split(df, start_time, end_time, eth_values)
-
-    print(f"{symbol}: generating images for {len(dfs)} days")
+    
+    dfs = dfs[-2:]
+    print(f"{symbol}: generating images for {len(dfs)} days")    
     for i in range(1, len(dfs)):
         today = dfs[i]
         yday = dfs[i - 1]
