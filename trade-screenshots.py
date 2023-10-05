@@ -31,18 +31,21 @@ def try_process_symbol(fun, symbol):
         traceback.print_exc()
         return None
 
+def weekday_to_string(weekday):
+    days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    return days[weekday]
 
 def main(
     start="2023-01-01",  # TODO: start date needed?
     timeframe="5min",  # only allow '<integer>min'
     provider="tv",
-    symbols="2023-10-02_NVDA",
+    symbols=None, #"2023-10-02_NVDA",
     trading_hour='09:30-16:00',  # Assume OHLC data is in market time for symbol in question
     filetype="png",
     outdir='images',
     # trades_file='trades.csv'
     trades_file=None,
-    symbols_file=None,
+    symbols_file='stocks_in_play.txt',
     days=0,
 ):
     if symbols and (trades_file or symbols_file):
@@ -109,9 +112,20 @@ def main(
             utils.write_file(fig, f"{outdir}/trades/{trade.symbol}-{suffix}", filetype, 1600, 900)     
     
     elif symbols_file:
-        # Add daily/ah/pm levels etc as constant values in df?
-        pass #TODO
-    
+        symbol_dates = utils.parse_txt(symbols_file)
+        for sym in symbol_dates.keys():
+            # 1. get df from first to last date present including 3 extra days if first date is a Monday
+            dates_sorted = sorted(symbol_dates[sym])
+            print(f"{sym}: getting df for {dates_sorted[0] - pd.Timedelta(days=3)} - {dates_sorted[-1]}")
+            #df = utils.get_dataframe_alpaca(sym, dates_sorted[0] - pd.Timedelta(days=3), dates_sorted[-1], timeframe, PATHS['alpaca-file'])
+                        
+            # 2. apply TA etc
+        
+            # 3. plot chart for each date, including ah/pm,
+            for date in dates_sorted:
+                start = date - pd.Timedelta(days=3) if date.weekday() == 0 else date- pd.Timedelta(days=1)                       
+                print(f"{sym}: {date} ({weekday_to_string(date.weekday())}) creating chart using dates {start}-{date}")                                                                        
+                # 4. write file                        
     else:
         raise ValueError("symbols, trades_file, or symbols_file must be provided")
 

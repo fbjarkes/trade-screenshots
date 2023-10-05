@@ -5,6 +5,7 @@ from plotly.subplots import make_subplots
 import pandas as pd
 import utils_ta
 
+#TODO: need separate generate chart functions?
 
 def generate_trade_chart(trade, df, tf, title, plot_indicators, config):
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01, row_heights=[0.8, 0.2])

@@ -18,7 +18,6 @@ class Trade:
     entry_price: Decimal
     exit_price: Decimal
 
-
 def parse_trades(csv_file: str) -> List[Trade]:
     trades = []
     with open(csv_file) as f:
@@ -55,7 +54,7 @@ def process_json_data(data: Dict[str, List[Dict[str, Union[str, float]]]], symbo
         print(f"Symbol {symbol} not found in the json")
 
 
-def get_dataframe_alpaca(start, timeframe, symbol, path):
+def get_dataframe_alpaca(symbol, start, end, timeframe, path):
     file_path = f"{path}/{timeframe}/{symbol}.json"
     print(f"{symbol}: parsing alpaca file data '{file_path}'")
     data = load_json_data(symbol, file_path)
@@ -118,3 +117,18 @@ def write_file(fig: Any, filename: str, type: str, width: int, height: int) -> N
         print(f"Wrote '{filename}.svg'")
     else:
         raise ValueError("Unsupported file type:", type)
+
+
+def parse_txt(filename: str) -> Dict[str, datetime]:
+    with open(filename) as f:
+        lines = f.readlines()
+        sym_map = {}
+        for line in lines:
+            date, symbols = line.split(':')
+            for sym in symbols.split(','):
+                sym = sym.strip()
+                if sym in sym_map:                    
+                    sym_map[sym].append(pd.to_datetime(date))
+                else:
+                    sym_map[sym] = [pd.to_datetime(date)]
+        return sym_map
