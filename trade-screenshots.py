@@ -9,7 +9,7 @@ import utils_ta
 import plots
 import pandas as pd
 
-PATHS = {'tv': '~/Bardata/tradingview', 'alpaca-file': '~/Bardata/alpaca-v2'}
+PATHS = {'tv': '~/Bardata/tradingview', 'alpaca-file': '/Users/fbjarkes/Bardata/alpaca-v2'}
 
 TA_PARAMS = {
     'VWAP': {'color': 'yellow'},
@@ -37,8 +37,8 @@ def weekday_to_string(weekday):
 
 def main(
     start="2023-01-01",  # TODO: start date needed?
-    timeframe="5min",  # only allow '<integer>min'
-    provider="tv",
+    timeframe="1min",  # only allow '<integer>min'
+    provider="alpaca-file",
     symbols=None, #"2023-10-02_NVDA",
     trading_hour='09:30-16:00',  # Assume OHLC data is in market time for symbol in question
     filetype="png",
@@ -116,16 +116,29 @@ def main(
         for sym in symbol_dates.keys():
             # 1. get df from first to last date present including 3 extra days if first date is a Monday
             dates_sorted = sorted(symbol_dates[sym])
-            print(f"{sym}: getting df for {dates_sorted[0] - pd.Timedelta(days=3)} - {dates_sorted[-1]}")
-            #df = utils.get_dataframe_alpaca(sym, dates_sorted[0] - pd.Timedelta(days=3), dates_sorted[-1], timeframe, PATHS['alpaca-file'])
-                        
+            first_date = dates_sorted[0] - pd.Timedelta(days=3)
+            last_date = dates_sorted[-1]
+            print(f"{sym}: getting df for {first_date} - {last_date}")
+            df = utils.get_dataframe_alpaca(sym, timeframe, PATHS['alpaca-file'])
+            print(f"{sym}: df start={df.index[0]} end={df.index[-1]}")
+            
+            # TODO: verify first/last dates are in df        
+
             # 2. apply TA etc
-        
+            df = utils_ta.add_ta(sym, df, ['EMA10', 'EMA20', 'EMA50'], start_time=None, end_time=None) # Apply TA to AH/PM
+                        
             # 3. plot chart for each date, including ah/pm,
-            for date in dates_sorted:
-                start = date - pd.Timedelta(days=3) if date.weekday() == 0 else date- pd.Timedelta(days=1)                       
-                print(f"{sym}: {date} ({weekday_to_string(date.weekday())}) creating chart using dates {start}-{date}")                                                                        
-                # 4. write file                        
+            for date in dates_sorted:                
+                start_date = date - pd.Timedelta(days=3) if date.weekday() == 0 else date- pd.Timedelta(days=1)                       
+                end_date = date + pd.DateOffset(days=1)
+                print(f"{sym}: {date} ({weekday_to_string(date.weekday())}) creating chart using dates {start_date}-{end_date}")
+                
+                filtered_df = df.loc[f"{start_date}":f"{end_date}"]                
+                
+                for tf in ['5min', '15min']:
+                    filtered_df = utils.transform_timeframe(filtered_df, '1min', tf)
+                    fig = plots.generate_chart(filtered_df, sym, title=f"{sym} {date} ({tf})")                    
+                    utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", filetype, 1600, 900)
     else:
         raise ValueError("symbols, trades_file, or symbols_file must be provided")
 

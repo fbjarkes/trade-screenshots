@@ -69,14 +69,15 @@ def generate_chart(df, symbol, title, plot_indicators=None, or_times=None, daily
     volume = go.Bar(x=df.index, y=df['Volume'], name='Volume', marker=dict(color='blue'))
 
     ta_lines = []
-    for ta in plot_indicators.keys():
-        line = go.Scatter(
-            x=df.index,
-            y=df[ta],
-            name=ta,
-            line=dict(color=plot_indicators[ta]['color']),
-        )
-        ta_lines.append(line)
+    if plot_indicators:
+        for ta in plot_indicators.keys():
+            line = go.Scatter(
+                x=df.index,
+                y=df[ta],
+                name=ta,
+                line=dict(color=plot_indicators[ta]['color']),
+            )
+            ta_lines.append(line)
 
     fig.add_trace(candlestick, row=1, col=1)
     for line in ta_lines:
@@ -84,6 +85,7 @@ def generate_chart(df, symbol, title, plot_indicators=None, or_times=None, daily
     fig.add_trace(volume, row=2, col=1)
 
     shapes = []
+    annotations = []
     if or_times:
         lowest, highest = utils_ta.or_levels(df, or_times)
         # TODO: a more simple way to select 10:30? e.g. bar 12?
@@ -94,22 +96,24 @@ def generate_chart(df, symbol, title, plot_indicators=None, or_times=None, daily
         #     dict(x0=df.index[0], x1=pd.Timestamp(f"{df.index[0].date()} {or_times[1]}"), y0=highest, y1=highest, line_dash='dash', opacity=0.5)
         # ])
 
-    shapes.append(dict(x0=df.index[0], x1=df.index[-1], y0=daily_levels['close_1'], y1=daily_levels['close_1'], line_dash='dot', line_color='green', opacity=0.4))
-    shapes.append(dict(x0=df.index[0], x1=df.index[-1], y0=daily_levels['low_1'], y1=daily_levels['low_1'], line_dash='longdash', line_color='green', opacity=0.3))
-    shapes.append(dict(x0=df.index[0], x1=df.index[-1], y0=daily_levels['high_1'], y1=daily_levels['high_1'], line_dash='longdash', line_color='green', opacity=0.3))
-    shapes.append(dict(x0=df.index[0], x1=df.index[-1], y0=daily_levels['eth_high'], y1=daily_levels['eth_high'], line_dash='longdash', line_color='blue', opacity=0.2))
-    shapes.append(dict(x0=df.index[0], x1=df.index[-1], y0=daily_levels['eth_low'], y1=daily_levels['eth_low'], line_dash='longdash', line_color='blue', opacity=0.2))
-    annotations = [
-        dict(x=df.index[0], y=daily_levels['close_1'], xref='x', yref='y', showarrow=False, xanchor='left', text='yclose'),
-        dict(x=df.index[0], y=daily_levels['high_1'], xref='x', yref='y', showarrow=False, xanchor='left', text='yhigh'),
-        dict(x=df.index[0], y=daily_levels['low_1'], xref='x', yref='y', showarrow=False, xanchor='left', text='ylow'),
-        dict(x=df.index[0], y=daily_levels['eth_high'], xref='x', yref='y', showarrow=False, xanchor='left', text='eth_high'),
-        dict(x=df.index[0], y=daily_levels['eth_low'], xref='x', yref='y', showarrow=False, xanchor='left', text='eth_low'),
-    ]
-
-    fig.update_layout(shapes=shapes, annotations=annotations)
+    if daily_levels:
+        shapes.append(dict(x0=df.index[0], x1=df.index[-1], y0=daily_levels['close_1'], y1=daily_levels['close_1'], line_dash='dot', line_color='green', opacity=0.4))
+        shapes.append(dict(x0=df.index[0], x1=df.index[-1], y0=daily_levels['low_1'], y1=daily_levels['low_1'], line_dash='longdash', line_color='green', opacity=0.3))
+        shapes.append(dict(x0=df.index[0], x1=df.index[-1], y0=daily_levels['high_1'], y1=daily_levels['high_1'], line_dash='longdash', line_color='green', opacity=0.3))
+        shapes.append(dict(x0=df.index[0], x1=df.index[-1], y0=daily_levels['eth_high'], y1=daily_levels['eth_high'], line_dash='longdash', line_color='blue', opacity=0.2))
+        shapes.append(dict(x0=df.index[0], x1=df.index[-1], y0=daily_levels['eth_low'], y1=daily_levels['eth_low'], line_dash='longdash', line_color='blue', opacity=0.2))
+        annotations = [
+            dict(x=df.index[0], y=daily_levels['close_1'], xref='x', yref='y', showarrow=False, xanchor='left', text='yclose'),
+            dict(x=df.index[0], y=daily_levels['high_1'], xref='x', yref='y', showarrow=False, xanchor='left', text='yhigh'),
+            dict(x=df.index[0], y=daily_levels['low_1'], xref='x', yref='y', showarrow=False, xanchor='left', text='ylow'),
+            dict(x=df.index[0], y=daily_levels['eth_high'], xref='x', yref='y', showarrow=False, xanchor='left', text='eth_high'),
+            dict(x=df.index[0], y=daily_levels['eth_low'], xref='x', yref='y', showarrow=False, xanchor='left', text='eth_low'),
+        ]
+    if shapes and annotations:
+        fig.update_layout(shapes=shapes, annotations=annotations)
     fig.update_layout(showlegend=False)
     fig.update_layout(xaxis_rangeslider_visible=False)
     fig.update_layout(title=title)
-
+    #TODO: remove xaxis gap
+    
     return fig

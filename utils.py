@@ -54,7 +54,7 @@ def process_json_data(data: Dict[str, List[Dict[str, Union[str, float]]]], symbo
         print(f"Symbol {symbol} not found in the json")
 
 
-def get_dataframe_alpaca(symbol, start, end, timeframe, path):
+def get_dataframe_alpaca(symbol, timeframe, path):
     file_path = f"{path}/{timeframe}/{symbol}.json"
     print(f"{symbol}: parsing alpaca file data '{file_path}'")
     data = load_json_data(symbol, file_path)
@@ -119,7 +119,7 @@ def write_file(fig: Any, filename: str, type: str, width: int, height: int) -> N
         raise ValueError("Unsupported file type:", type)
 
 
-def parse_txt(filename: str) -> Dict[str, datetime]:
+def parse_txt(filename: str) -> Dict[str, pd.Timestamp]:
     with open(filename) as f:
         lines = f.readlines()
         sym_map = {}
@@ -132,3 +132,10 @@ def parse_txt(filename: str) -> Dict[str, datetime]:
                 else:
                     sym_map[sym] = [pd.to_datetime(date)]
         return sym_map
+
+def transform_timeframe(df: pd.DataFrame, timeframe:str, transform:str) -> pd.DataFrame:
+    if timeframe == transform or df.empty:
+        return df  # No need to transform
+    conversion = {'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'}
+    resampled = df.resample(f"{transform}").agg(conversion)
+    return resampled.dropna()
