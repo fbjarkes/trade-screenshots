@@ -22,6 +22,7 @@ TA_PARAMS = {
     'DAILY_LEVEL': {'days': 1},
 }
 
+TIME_FRAMES = ['1min', '2min', '3min', '5min', '15min', '30min', '60min'] # Must be valid pandas freq. values
 
 def try_process_symbol(fun, symbol):
     try:
@@ -124,8 +125,9 @@ def main(
             
             # TODO: verify first/last dates are in df        
 
-            # 2. apply TA etc
+            # 2. apply TA etc (also jlines or EMA50 only?)
             df = utils_ta.add_ta(sym, df, ['EMA10', 'EMA20', 'EMA50'], start_time=None, end_time=None) # Apply TA to AH/PM
+            #TODO: TA missing
                         
             # 3. plot chart for each date, including ah/pm,
             for date in dates_sorted:                
@@ -137,7 +139,7 @@ def main(
                 
                 for tf in ['5min', '15min']:
                     filtered_df = utils.transform_timeframe(filtered_df, '1min', tf)
-                    fig = plots.generate_chart(filtered_df, sym, title=f"{sym} {date} ({tf})")                    
+                    fig = plots.generate_chart(filtered_df, tf, sym, title=f"{sym} {date} ({tf})")                    
                     utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", filetype, 1600, 900)
     else:
         raise ValueError("symbols, trades_file, or symbols_file must be provided")
@@ -186,6 +188,7 @@ def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end
         # TODO: option to plot 1-2 days before today (for stocks in play with specific dates)
         fig = plots.generate_chart(
             today,
+            timeframe,
             symbol,
             f"{date}-{symbol}",
             plot_indicators={key: TA_PARAMS[key] for key in ['VWAP', 'EMA10', 'EMA20', 'EMA50', 'BB_UPPER', 'BB_LOWER', 'Mid']},
