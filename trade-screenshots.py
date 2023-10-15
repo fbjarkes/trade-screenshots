@@ -20,6 +20,7 @@ TA_PARAMS = {
     'BB_LOWER': {'color': 'lightgrey'},
     'Mid': {'color': 'red'},
     'DAILY_LEVEL': {'days': 1},
+    'Jlines': {'color': 'green'}
 }
 
 TIME_FRAMES = ['1min', '2min', '3min', '5min', '15min', '30min', '60min'] # Must be valid pandas freq. values
@@ -123,11 +124,9 @@ def main(
             df = utils.get_dataframe_alpaca(sym, timeframe, PATHS['alpaca-file'])
             print(f"{sym}: df start={df.index[0]} end={df.index[-1]}")
             
-            # TODO: verify first/last dates are in df        
-
-            # 2. apply TA etc (also jlines or EMA50 only?)
-            df = utils_ta.add_ta(sym, df, ['EMA10', 'EMA20', 'EMA50'], start_time=None, end_time=None) # Apply TA to AH/PM
-            #TODO: TA missing
+            # verify first/last dates are in df
+            if first_date < df.index[0] or last_date > df.index[-1]:
+                raise ValueError(f"{sym}: Missing data for {first_date} - {last_date} (df={df.index[0]} - {df.index[-1]})")                    
                         
             # 3. plot chart for each date, including ah/pm,
             for date in dates_sorted:                
@@ -139,7 +138,10 @@ def main(
                 
                 for tf in ['5min', '15min']:
                     filtered_df = utils.transform_timeframe(filtered_df, '1min', tf)
-                    fig = plots.generate_chart(filtered_df, tf, sym, title=f"{sym} {date} ({tf})")                    
+                    # Applies to PM/AH
+                    filtered_df = utils_ta.add_ta(sym, filtered_df, ['EMA10', 'EMA20', 'EMA50'], start_time=None, end_time=None) 
+                    fig = plots.generate_chart(filtered_df, tf, sym, title=f"{sym} {date} ({tf})", 
+                                               plot_indicators={key: TA_PARAMS[key] for key in ['EMA10', 'EMA20', 'EMA50']})                    
                     utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", filetype, 1600, 900)
     else:
         raise ValueError("symbols, trades_file, or symbols_file must be provided")
