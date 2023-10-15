@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import time
 import traceback
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
@@ -42,17 +43,28 @@ def main(
     timeframe="1min",  # only allow '<integer>min'
     provider="alpaca-file",
     symbols=None, #"2023-10-02_NVDA",
-    trading_hour='09:30-16:00',  # Assume OHLC data is in market time for symbol in question
-    filetype="png",
-    outdir='images',
     # trades_file='trades.csv'
     trades_file=None,
     symbols_file='stocks_in_play.txt',
+    trading_hour='09:30-16:00',  # Assume OHLC data is in market time for symbol in question
+    filetype="png",
+    outdir='images',    
     days=0,
 ):
-    if symbols and (trades_file or symbols_file):
-        raise ValueError("symbols, trades_file, and symbols_file are mutually exclusive")
-    
+    """
+    This function generates trade screenshots for a given set of symbols and timeframes.
+    :param start: The start date for the trade screenshots. Defaults to "2023-01-01".
+    :param timeframe: The timeframe for the trade screenshots. Only allows '<integer>min'. Defaults to "1min".
+    :param provider: The provider for the trade data.
+    :param symbols: The symbols for which to generate trade screenshots.
+    :param trades_file: The file containing the trade data. Defaults to None.
+    :param symbols_file: The file containing the symbols for which to generate trade screenshots.
+    :param trading_hour: The trading hour for the trade screenshots. Assumes OHLC data is in market time for symbol in question.
+    :param filetype: The file type for the generated trade screenshots.
+    :param outdir: The output directory for the generated trade screenshots.
+    :param days: The number of days for which to generate trade screenshots, 0 for all available data.
+    """
+        
     if not os.path.exists(outdir):
         raise Exception(f"Output directory '{outdir}' does not exist")
     
@@ -77,7 +89,7 @@ def main(
             #         traceback.print_exc()
             #         return None
             func = partial(
-                process_symbol, start=start, timeframe=timeframe, provider=provider, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir
+                process_symbol, start=start, timeframe=timeframe, provider=provider, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir, days=days
             )
             try_func = partial(try_process_symbol, func)
             results = list(executor.map(try_func, symbols))
@@ -148,11 +160,11 @@ def main(
 
 
 # TODO: use partial decorator ? @functools.partial()
-def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end_time, outdir):
+def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end_time, outdir, days):
     if provider == 'tv':
         df = utils.get_dataframe_tv(start, timeframe, symbol, PATHS['tv'])
     elif provider == 'alpaca-file':
-        df = utils.get_dataframe_alpaca(start, timeframe, symbol, PATHS['alpaca-file'])  # TODO: not implemented
+        df = utils.get_dataframe_alpaca(symbol, timeframe, PATHS['alpaca-file'])
     elif provider == 'alpaca':
         df = utils.download_dataframe_alpaca(start, timeframe, symbol)  # TODO: not implemented
     else:
@@ -168,9 +180,10 @@ def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end
 
     print(f"{symbol}: Splitting data into days")
     eth_values = {}
-    dfs = utils.split(df, start_time, end_time, eth_values)
+    dfs = utils.split(df, start_time, end_time, eth_values)    
+    if days != 0:
+        dfs = dfs[-days:] 
     
-    dfs = dfs[-2:]
     print(f"{symbol}: generating images for {len(dfs)} days")    
     for i in range(1, len(dfs)):
         today = dfs[i]
@@ -187,12 +200,11 @@ def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end
         utils_ta.vwap(today)
         utils_ta.mid(today)
 
-        # TODO: option to plot 1-2 days before today (for stocks in play with specific dates)
         fig = plots.generate_chart(
             today,
             timeframe,
             symbol,
-            f"{date}-{symbol}",
+            title=f"{symbol} {date} ({timeframe})",
             plot_indicators={key: TA_PARAMS[key] for key in ['VWAP', 'EMA10', 'EMA20', 'EMA50', 'BB_UPPER', 'BB_LOWER', 'Mid']},
             or_times=('09:30', '10:30'),
             daily_levels=levels,
