@@ -31,7 +31,7 @@ def main(
     symbols=None, #"2023-10-02_NVDA",
     # trades_file='trades.csv'
     trades_file=None,
-    symbols_file='stocks_in_play.txt',
+    sip_file='stocks_in_play.txt',
     trading_hour='09:30-16:00',  # Assume OHLC data is in market time for symbol in question
     filetype="png",
     outdir='images',    
@@ -44,7 +44,7 @@ def main(
     :param provider: The provider for the trade data.
     :param symbols: The symbols for which to generate trade screenshots.
     :param trades_file: The file containing the trade data. Defaults to None.
-    :param symbols_file: The file containing the symbols for which to generate trade screenshots.
+    :param sip_file: The file containing the symbols for which to generate trade screenshots.
     :param trading_hour: The trading hour for the trade screenshots. Assumes OHLC data is in market time for symbol in question.
     :param filetype: The file type for the generated trade screenshots.
     :param outdir: The output directory for the generated trade screenshots.
@@ -65,12 +65,11 @@ def main(
     elif trades_file:
         handle_trades(start, timeframe, trades_file, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)     
     
-    elif symbols_file:
-        handle_sip(timeframe, symbols_file, filetype, outdir, PATHS, TA_PARAMS)
+    elif sip_file:
+        handle_sip(timeframe, sip_file, filetype, outdir, PATHS, TA_PARAMS)
     else:
-        raise ValueError("symbols, trades_file, or symbols_file must be provided")
+        raise ValueError("symbols, trades_file, or sip_file must be provided")
 
 if __name__ == "__main__":
     fire.Fire(main)
 
-PATHS = {'tv': '~/Bardata/tradingview', 'alpaca-file': '/Users/fbjarkes/Bardata/alpaca-v2'}
