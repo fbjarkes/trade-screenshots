@@ -1,23 +1,13 @@
 #!/usr/bin/env python
 import time
 import traceback
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
-from functools import partial
 import os
 import fire
-from trade_screenshots import utils_ta
-from trade_screenshots.common import PATHS, TA_PARAMS, try_process_symbol
+from trade_screenshots.sip_handler import handle_sip
+from trade_screenshots.symbols_handler import handle_symbols
 from trade_screenshots.trades_handler import handle_trades
-import trade_screenshots.utils as utils
-import trade_screenshots.plots as plots
-import pandas as pd
 
 
-def weekday_to_string(weekday):
-    days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-    return days[weekday]
-
-#TODO: keep minimal main function and move everything to trade_screenshot folder
 def main(
     start="2023-01-01",  # TODO: start date needed?
     timeframe="1min",  # only allow '<integer>min'
@@ -54,117 +44,15 @@ def main(
         start_time, end_time = None, None
     
     if symbols:
-        if isinstance(symbols, tuple):
-            symbols = list(symbols)
-        elif ',' in symbols:
-            symbols = symbols.split(',')
-        else:
-            symbols = [symbols]
-        with ProcessPoolExecutor() as executor:
-            # def func(symbol):
-            #     try:
-            #         return process_symbol(symbol, start=start, timeframe=timeframe, provider=provider, trades=trades, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir)
-            #     except Exception as e:
-            #         print(f"Error processing symbol {symbol}: {e}. Skipping.")
-            #         traceback.print_exc()
-            #         return None
-            func = partial(
-                process_symbol, start=start, timeframe=timeframe, provider=provider, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir, days=days
-            )
-            try_func = partial(try_process_symbol, func)
-            results = list(executor.map(try_func, symbols))
+        handle_symbols(start, timeframe, provider, symbols, filetype, outdir, days, start_time, end_time)
 
     elif trades_file:
         handle_trades(start, timeframe, trades_file, filetype, outdir, days, start_time, end_time)     
     
     elif symbols_file:
-        symbol_dates = utils.parse_txt(symbols_file)
-        for sym in symbol_dates.keys():
-            # 1. get df from first to last date present including 3 extra days if first date is a Monday
-            dates_sorted = sorted(symbol_dates[sym])
-            first_date = dates_sorted[0] - pd.Timedelta(days=3)
-            last_date = dates_sorted[-1]
-            print(f"{sym}: getting df for {first_date} - {last_date}")
-            df = utils.get_dataframe_alpaca(sym, timeframe, PATHS['alpaca-file'])
-            print(f"{sym}: df start={df.index[0]} end={df.index[-1]}")
-            
-            # verify first/last dates are in df
-            if first_date < df.index[0] or last_date > df.index[-1]:
-                raise ValueError(f"{sym}: Missing data for {first_date} - {last_date} (df={df.index[0]} - {df.index[-1]})")                    
-                        
-            # 3. plot chart for each date, including ah/pm,
-            for date in dates_sorted:                
-                start_date = date - pd.Timedelta(days=3) if date.weekday() == 0 else date- pd.Timedelta(days=1)                       
-                end_date = date + pd.DateOffset(days=1)
-                print(f"{sym}: {date} ({weekday_to_string(date.weekday())}) creating chart using dates {start_date}-{end_date}")
-                
-                filtered_df = df.loc[f"{start_date}":f"{end_date}"]                
-                
-                for tf in ['5min', '15min']:
-                    filtered_df = utils.transform_timeframe(filtered_df, '1min', tf)
-                    # Applies to PM/AH
-                    filtered_df = utils_ta.add_ta(sym, filtered_df, ['EMA10', 'EMA20', 'EMA50'], start_time=None, end_time=None) 
-                    fig = plots.generate_chart(filtered_df, tf, sym, title=f"{sym} {date} ({tf})", 
-                                               plot_indicators={key: TA_PARAMS[key] for key in ['EMA10', 'EMA20', 'EMA50']})                    
-                    utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", filetype, 1600, 900)
+        handle_sip(timeframe, symbols_file, filetype, outdir)
     else:
         raise ValueError("symbols, trades_file, or symbols_file must be provided")
-
-# TODO: use partial decorator ? @functools.partial()
-def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end_time, outdir, days):
-    if provider == 'tv':
-        df = utils.get_dataframe_tv(start, timeframe, symbol, PATHS['tv'])
-    elif provider == 'alpaca-file':
-        df = utils.get_dataframe_alpaca(symbol, timeframe, PATHS['alpaca-file'])
-    elif provider == 'alpaca':
-        df = utils.download_dataframe_alpaca(start, timeframe, symbol)  # TODO: not implemented
-    else:
-        raise ValueError(f"Unknown provider: {provider}")
-
-    if df.empty:
-        raise Exception(f"Empty DataFrame for symbol {symbol}")
-
-    print(f"{symbol}: Applying TA to {len(df)} rows")
-
-    # TODO: add mid,vwap, daily/ah/pm levels and store in dataframe as constant values? and write test for it?
-    df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50', 'BB'], start_time, end_time)
-
-    print(f"{symbol}: Splitting data into days")
-    eth_values = {}
-    dfs = utils.split(df, start_time, end_time, eth_values)    
-    if days != 0:
-        dfs = dfs[-days:] 
-    
-    print(f"{symbol}: generating images for {len(dfs)} days")    
-    for i in range(1, len(dfs)):
-        today = dfs[i]
-        yday = dfs[i - 1]
-        date = today.index.date[0]
-        levels = {
-            'close_1': yday['Close'].iloc[-1],
-            'high_1': yday['High'].max(),
-            'low_1': yday['Low'].min(),
-            'eth_low': eth_values[date]['low'],
-            'eth_high': eth_values[date]['high'],
-        }
-
-        utils_ta.vwap(today)
-        utils_ta.mid(today)
-
-        fig = plots.generate_chart(
-            today,
-            timeframe,
-            symbol,
-            title=f"{symbol} {date} ({timeframe})",
-            plot_indicators={key: TA_PARAMS[key] for key in ['VWAP', 'EMA10', 'EMA20', 'EMA50', 'BB_UPPER', 'BB_LOWER', 'Mid']},
-            or_times=('09:30', '10:30'),
-            daily_levels=levels,
-        )
-
-        utils.write_file(fig, f"{outdir}/{symbol}-{date}", filetype, 1600, 900)
-
-    print("done")
-
 
 if __name__ == "__main__":
     fire.Fire(main)
