@@ -5,39 +5,19 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from functools import partial
 import os
 import fire
-import utils
-import utils_ta
-import plots
+from trade_screenshots import utils_ta
+from trade_screenshots.common import PATHS, TA_PARAMS, try_process_symbol
+from trade_screenshots.trades_handler import handle_trades
+import trade_screenshots.utils as utils
+import trade_screenshots.plots as plots
 import pandas as pd
 
-PATHS = {'tv': '~/Bardata/tradingview', 'alpaca-file': '/Users/fbjarkes/Bardata/alpaca-v2'}
-
-TA_PARAMS = {
-    'VWAP': {'color': 'yellow'},
-    'EMA10': {'color': 'lightblue'},
-    'EMA20': {'color': 'blue'},
-    'EMA50': {'color': 'darkblue'},
-    'BB_UPPER': {'color': 'lightgrey'},
-    'BB_LOWER': {'color': 'lightgrey'},
-    'Mid': {'color': 'red'},
-    'DAILY_LEVEL': {'days': 1},
-    'Jlines': {'color': 'green'}
-}
-
-TIME_FRAMES = ['1min', '2min', '3min', '5min', '15min', '30min', '60min'] # Must be valid pandas freq. values
-
-def try_process_symbol(fun, symbol):
-    try:
-        fun(symbol)
-    except Exception as e:
-        print(f"Error processing symbol {symbol}: {e}. Skipping.")
-        traceback.print_exc()
-        return None
 
 def weekday_to_string(weekday):
     days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     return days[weekday]
 
+#TODO: keep minimal main function and move everything to trade_screenshot folder
 def main(
     start="2023-01-01",  # TODO: start date needed?
     timeframe="1min",  # only allow '<integer>min'
@@ -95,35 +75,7 @@ def main(
             results = list(executor.map(try_func, symbols))
 
     elif trades_file:
-        trades = utils.parse_trades(trades_file)
-        symbols = list(set([trade.symbol for trade in trades]))
-
-        dfs_map = {}
-        for symbol in symbols:
-            df = utils.get_dataframe_tv(start, timeframe, symbol, PATHS['tv'])
-            if df.empty:
-                print(f"Empty DataFrame for symbol {symbol}. Skipping")
-            else:
-                print(f"{symbol}: Applying TA to {len(df)} rows")
-                df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50', 'BB'], start_time, end_time)
-                dfs_map[symbol] = df
-
-        for trade in trades:
-            df = dfs_map[trade.symbol]
-            start_date = pd.to_datetime(trade.start_dt).date() - pd.Timedelta(days=days)
-            end_date = pd.to_datetime(trade.end_dt).date() + pd.Timedelta(days=days)
-            df = df.loc[f"{start_date}":f"{end_date}"]
-            fig = plots.generate_trade_chart(
-                trade,
-                df,
-                tf=timeframe,
-                title=f"{trades_file}-{trade.symbol}-{trade.start_dt[0:10]}",
-                plot_indicators=['EMA10', 'EMA20', 'EMA50', 'BB_UPPER', 'BB_LOWER'],
-                config=TA_PARAMS,
-            )
-            # format date like "2023-01-01_1500"
-            suffix = trade.start_dt[:16].replace(' ', '_').replace(':', '')
-            utils.write_file(fig, f"{outdir}/trades/{trade.symbol}-{suffix}", filetype, 1600, 900)     
+        handle_trades(start, timeframe, trades_file, filetype, outdir, days, start_time, end_time)     
     
     elif symbols_file:
         symbol_dates = utils.parse_txt(symbols_file)
@@ -157,7 +109,6 @@ def main(
                     utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", filetype, 1600, 900)
     else:
         raise ValueError("symbols, trades_file, or symbols_file must be provided")
-
 
 # TODO: use partial decorator ? @functools.partial()
 def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end_time, outdir, days):

@@ -3,7 +3,7 @@ import functools
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 import pandas as pd
-import utils_ta
+import trade_screenshots.utils_ta as utils_ta
 
 #TODO: need separate generate chart functions?
 
