@@ -1,16 +1,17 @@
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
+
 import trade_screenshots.plots as plots
 import trade_screenshots.utils as utils
 from trade_screenshots import utils_ta
-from trade_screenshots.common import PATHS, TA_PARAMS, try_process_symbol
+from trade_screenshots.common import try_process_symbol
 
 # TODO: use partial decorator ? @functools.partial()
-def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end_time, outdir, days):
+def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end_time, outdir, days, paths, ta_params):
     if provider == 'tv':
-        df = utils.get_dataframe_tv(start, timeframe, symbol, PATHS['tv'])
+        df = utils.get_dataframe_tv(start, timeframe, symbol, paths['tv'])
     elif provider == 'alpaca-file':
-        df = utils.get_dataframe_alpaca(symbol, timeframe, PATHS['alpaca-file'])
+        df = utils.get_dataframe_alpaca(symbol, timeframe, paths['alpaca-file'])
     elif provider == 'alpaca':
         df = utils.download_dataframe_alpaca(start, timeframe, symbol)  # TODO: not implemented
     else:
@@ -51,7 +52,7 @@ def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end
             timeframe,
             symbol,
             title=f"{symbol} {date} ({timeframe})",
-            plot_indicators={key: TA_PARAMS[key] for key in ['VWAP', 'EMA10', 'EMA20', 'EMA50', 'BB_UPPER', 'BB_LOWER', 'Mid']},
+            plot_indicators={key: ta_params[key] for key in ['VWAP', 'EMA10', 'EMA20', 'EMA50', 'BB_UPPER', 'BB_LOWER', 'Mid']},
             or_times=('09:30', '10:30'),
             daily_levels=levels,
         )
@@ -61,7 +62,7 @@ def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end
     print("done")
 
 
-def handle_symbols(start, timeframe, provider, symbols, filetype, outdir, days, start_time, end_time):
+def handle_symbols(start, timeframe, provider, symbols, filetype, outdir, days, start_time, end_time, paths, ta_params):
     if isinstance(symbols, tuple):
         symbols = list(symbols)
     elif ',' in symbols:
@@ -77,7 +78,7 @@ def handle_symbols(start, timeframe, provider, symbols, filetype, outdir, days, 
             #         traceback.print_exc()
             #         return None
         func = partial(
-                process_symbol, start=start, timeframe=timeframe, provider=provider, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir, days=days
+                process_symbol, start=start, timeframe=timeframe, provider=provider, filetype=filetype, start_time=start_time, end_time=end_time, outdir=outdir, days=days, paths=paths, ta_params=ta_params
             )
         try_func = partial(try_process_symbol, func)
         results = list(executor.map(try_func, symbols))

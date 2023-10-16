@@ -1,4 +1,3 @@
-from trade_screenshots.common import PATHS, TA_PARAMS
 import trade_screenshots.plots as plots
 import trade_screenshots.utils as utils
 import trade_screenshots.utils_ta as utils_ta
@@ -6,13 +5,13 @@ import trade_screenshots.utils_ta as utils_ta
 
 import pandas as pd
 
-def handle_trades(start, timeframe, trades_file, filetype, outdir, days, start_time, end_time):
+def handle_trades(start, timeframe, trades_file, filetype, outdir, days, start_time, end_time, paths, ta_params):
     trades = utils.parse_trades(trades_file)
     symbols = list(set([trade.symbol for trade in trades]))
 
     dfs_map = {}
     for symbol in symbols:
-        df = utils.get_dataframe_tv(start, timeframe, symbol, PATHS['tv'])
+        df = utils.get_dataframe_tv(start, timeframe, symbol, paths['tv'])
         if df.empty:
             print(f"Empty DataFrame for symbol {symbol}. Skipping")
         else:
@@ -31,7 +30,7 @@ def handle_trades(start, timeframe, trades_file, filetype, outdir, days, start_t
                 tf=timeframe,
                 title=f"{trades_file}-{trade.symbol}-{trade.start_dt[0:10]}",
                 plot_indicators=['EMA10', 'EMA20', 'EMA50', 'BB_UPPER', 'BB_LOWER'],
-                config=TA_PARAMS,
+                config=ta_params,
             )
             # format date like "2023-01-01_1500"
         suffix = trade.start_dt[:16].replace(' ', '_').replace(':', '')

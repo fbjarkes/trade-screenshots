@@ -8,6 +8,22 @@ from trade_screenshots.symbols_handler import handle_symbols
 from trade_screenshots.trades_handler import handle_trades
 
 
+PATHS = {'tv': '~/Bardata/tradingview', 'alpaca-file': '/Users/fbjarkes/Bardata/alpaca-v2'}
+
+TA_PARAMS = {
+    'VWAP': {'color': 'yellow'},
+    'EMA10': {'color': 'lightblue'},
+    'EMA20': {'color': 'blue'},
+    'EMA50': {'color': 'darkblue'},
+    'BB_UPPER': {'color': 'lightgrey'},
+    'BB_LOWER': {'color': 'lightgrey'},
+    'Mid': {'color': 'red'},
+    'DAILY_LEVEL': {'days': 1},
+    'Jlines': {'color': 'green'}
+}
+
+TIME_FRAMES = ['1min', '2min', '3min', '5min', '15min', '30min', '60min'] # Must be valid pandas freq. values
+
 def main(
     start="2023-01-01",  # TODO: start date needed?
     timeframe="1min",  # only allow '<integer>min'
@@ -44,15 +60,17 @@ def main(
         start_time, end_time = None, None
     
     if symbols:
-        handle_symbols(start, timeframe, provider, symbols, filetype, outdir, days, start_time, end_time)
+        handle_symbols(start, timeframe, provider, symbols, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)
 
     elif trades_file:
-        handle_trades(start, timeframe, trades_file, filetype, outdir, days, start_time, end_time)     
+        handle_trades(start, timeframe, trades_file, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)     
     
     elif symbols_file:
-        handle_sip(timeframe, symbols_file, filetype, outdir)
+        handle_sip(timeframe, symbols_file, filetype, outdir, PATHS, TA_PARAMS)
     else:
         raise ValueError("symbols, trades_file, or symbols_file must be provided")
 
 if __name__ == "__main__":
     fire.Fire(main)
+
+PATHS = {'tv': '~/Bardata/tradingview', 'alpaca-file': '/Users/fbjarkes/Bardata/alpaca-v2'}

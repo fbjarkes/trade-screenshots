@@ -1,13 +1,13 @@
 import trade_screenshots.plots as plots
 import trade_screenshots.utils as utils
 from trade_screenshots import utils_ta
-from trade_screenshots.common import PATHS, TA_PARAMS, weekday_to_string
+from trade_screenshots.common import weekday_to_string
 
 
 import pandas as pd
 
 
-def handle_sip(timeframe, symbols_file, filetype, outdir):
+def handle_sip(timeframe, symbols_file, filetype, outdir, paths, ta_params):
     symbol_dates = utils.parse_txt(symbols_file)
     for sym in symbol_dates.keys():
             # 1. get df from first to last date present including 3 extra days if first date is a Monday
@@ -15,7 +15,7 @@ def handle_sip(timeframe, symbols_file, filetype, outdir):
         first_date = dates_sorted[0] - pd.Timedelta(days=3)
         last_date = dates_sorted[-1]
         print(f"{sym}: getting df for {first_date} - {last_date}")
-        df = utils.get_dataframe_alpaca(sym, timeframe, PATHS['alpaca-file'])
+        df = utils.get_dataframe_alpaca(sym, timeframe, paths['alpaca-file'])
         print(f"{sym}: df start={df.index[0]} end={df.index[-1]}")
 
             # verify first/last dates are in df
@@ -35,5 +35,5 @@ def handle_sip(timeframe, symbols_file, filetype, outdir):
                     # Applies to PM/AH
                 filtered_df = utils_ta.add_ta(sym, filtered_df, ['EMA10', 'EMA20', 'EMA50'], start_time=None, end_time=None)
                 fig = plots.generate_chart(filtered_df, tf, sym, title=f"{sym} {date} ({tf})",
-                                               plot_indicators={key: TA_PARAMS[key] for key in ['EMA10', 'EMA20', 'EMA50']})
+                                               plot_indicators={key: ta_params[key] for key in ['EMA10', 'EMA20', 'EMA50']})
                 utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", filetype, 1600, 900)
