@@ -7,7 +7,7 @@ from trade_screenshots.common import weekday_to_string
 import pandas as pd
 
 
-def handle_sip(timeframe, symbols_file, filetype, outdir, paths, ta_params):
+def handle_sip(timeframe, provider, symbols_file, filetype, outdir, paths, ta_params):
     symbol_dates = utils.parse_txt(symbols_file)
     for sym in symbol_dates.keys():
             # 1. get df from first to last date present including 3 extra days if first date is a Monday
@@ -15,7 +15,10 @@ def handle_sip(timeframe, symbols_file, filetype, outdir, paths, ta_params):
         first_date = dates_sorted[0] - pd.Timedelta(days=3)
         last_date = dates_sorted[-1]
         print(f"{sym}: getting df for {first_date} - {last_date}")
-        df = utils.get_dataframe_alpaca(sym, timeframe, paths['alpaca-file'])
+        if provider == 'tv':
+            df = utils.get_dataframe_tv(first_date, timeframe, sym, paths['tv'])
+        else:
+            df = utils.get_dataframe_alpaca(sym, timeframe, paths['alpaca-file'])
         print(f"{sym}: df start={df.index[0]} end={df.index[-1]}")
 
             # verify first/last dates are in df
@@ -24,6 +27,7 @@ def handle_sip(timeframe, symbols_file, filetype, outdir, paths, ta_params):
 
             # 3. plot chart for each date, including ah/pm,
         for date in dates_sorted:
+            # TODO: parallelize this loop:
             start_date = date - pd.Timedelta(days=3) if date.weekday() == 0 else date- pd.Timedelta(days=1)
             end_date = date + pd.DateOffset(days=1)
             print(f"{sym}: {date} ({weekday_to_string(date.weekday())}) creating chart using dates {start_date}-{end_date}")

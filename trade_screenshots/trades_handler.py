@@ -5,13 +5,16 @@ import trade_screenshots.utils_ta as utils_ta
 
 import pandas as pd
 
-def handle_trades(start, timeframe, trades_file, filetype, outdir, days, start_time, end_time, paths, ta_params):
+def handle_trades(start, timeframe, provider, trades_file, filetype, outdir, days, start_time, end_time, paths, ta_params):
     trades = utils.parse_trades(trades_file)
     symbols = list(set([trade.symbol for trade in trades]))
 
     dfs_map = {}
     for symbol in symbols:
-        df = utils.get_dataframe_tv(start, timeframe, symbol, paths['tv'])
+        if provider == 'tv':
+            df = utils.get_dataframe_tv(start, timeframe, symbol, paths['tv'])
+        else:
+            df = utils.get_dataframe_alpaca(symbol, timeframe, paths['alpaca-file'])
         if df.empty:
             print(f"Empty DataFrame for symbol {symbol}. Skipping")
         else:

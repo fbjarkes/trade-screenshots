@@ -63,10 +63,10 @@ def main(
         handle_symbols(start, timeframe, provider, symbols, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)
 
     elif trades_file:
-        handle_trades(start, timeframe, trades_file, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)     
+        handle_trades(start, timeframe, provider, trades_file, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)     
     
     elif sip_file:
-        handle_sip(timeframe, sip_file, filetype, outdir, PATHS, TA_PARAMS)
+        handle_sip(timeframe, provider, sip_file, filetype, outdir, PATHS, TA_PARAMS)
     else:
         raise ValueError("symbols, trades_file, or sip_file must be provided")
 
