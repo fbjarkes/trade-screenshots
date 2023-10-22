@@ -126,19 +126,15 @@ def parse_txt(filename: str) -> Dict[str, pd.Timestamp]:
     2023-10-12:META,NVDA
     ...
     """
+    symbol_map = {}
     with open(filename) as f:
-        lines = f.readlines()
-        sym_map = {}
-        for line in lines:
-            date, symbols = line.split(':')
-            for sym in symbols.split(','):
-                sym = sym.strip()
-                if sym != '':
-                    if sym in sym_map:                    
-                        sym_map[sym].append(pd.to_datetime(date))
-                    else:
-                        sym_map[sym] = [pd.to_datetime(date)]
-        return sym_map
+        for line in f:
+            date, symbols = line.strip().split(':')
+            for symbol in symbols.split(','):
+                symbol = symbol.strip()
+                if symbol:
+                    symbol_map.setdefault(symbol, []).append(pd.to_datetime(date))
+    return symbol_map
 
 def transform_timeframe(df: pd.DataFrame, timeframe:str, transform:str) -> pd.DataFrame:
     if timeframe == transform or df.empty:
