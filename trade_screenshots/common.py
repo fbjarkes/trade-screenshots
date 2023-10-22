@@ -1,5 +1,7 @@
 import traceback
 
+# TODO: weekly
+VALID_TIME_FRAMES = ['1min', '2min', '3min', '5min', '15min', '30min', '60min'] # Must be valid pandas freq. values
 
 def try_process_symbol(fun, symbol):
     try:

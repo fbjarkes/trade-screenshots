@@ -22,8 +22,6 @@ TA_PARAMS = {
     'Jlines': {'color': 'green'}
 }
 
-TIME_FRAMES = ['1min', '2min', '3min', '5min', '15min', '30min', '60min'] # Must be valid pandas freq. values
-
 def main(
     start="2023-01-01",  # TODO: start date needed?
     timeframe="1min",  # only allow '<integer>min'
@@ -36,6 +34,7 @@ def main(
     filetype="png",
     outdir='images',    
     days=0,
+    transform='5min,15min'
 ):
     """
     This function generates trade screenshots for a given set of symbols and timeframes.
@@ -66,7 +65,7 @@ def main(
         handle_trades(start, timeframe, provider, trades_file, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)     
     
     elif sip_file:
-        handle_sip(timeframe, provider, sip_file, filetype, outdir, PATHS, TA_PARAMS)
+        handle_sip(timeframe, provider, sip_file, filetype, outdir, transform, days, PATHS, TA_PARAMS)
     else:
         raise ValueError("symbols, trades_file, or sip_file must be provided")
 

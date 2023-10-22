@@ -1,19 +1,24 @@
 import trade_screenshots.plots as plots
 import trade_screenshots.utils as utils
 from trade_screenshots import utils_ta
-from trade_screenshots.common import weekday_to_string
+from trade_screenshots.common import VALID_TIME_FRAMES, weekday_to_string
 
 
 import pandas as pd
 
 
-def handle_sip(timeframe, provider, symbols_file, filetype, outdir, paths, ta_params):
-    symbol_dates = utils.parse_txt(symbols_file)    
+def handle_sip(timeframe, provider, symbols_file, filetype, outdir, transform, days, paths, ta_params):
+    symbol_dates = utils.parse_txt(symbols_file)
+    transform_tf = transform.split(',')        
+    days_offset = days if days > 0 else 3
+    if not all(tf in VALID_TIME_FRAMES for tf in transform_tf):
+        raise ValueError(f"Invalid timeframe in transform '{transform}'")
+    
     for sym in symbol_dates.keys():
         try:
             # 1. get df from first to last date present including 3 extra days if first date is a Monday
-            dates_sorted = sorted(symbol_dates[sym])
-            first_date = dates_sorted[0] - pd.Timedelta(days=3)
+            dates_sorted = sorted(symbol_dates[sym])            
+            first_date = dates_sorted[0] - pd.Timedelta(days=days_offset)
             last_date = dates_sorted[-1]
             print(f"{sym}: getting df for {first_date} - {last_date}")
             if provider == 'tv':
@@ -29,13 +34,14 @@ def handle_sip(timeframe, provider, symbols_file, filetype, outdir, paths, ta_pa
                 # 3. plot chart for each date, including ah/pm,
             for date in dates_sorted:
                 # TODO: parallelize this loop:
-                start_date = date - pd.Timedelta(days=3) if date.weekday() == 0 else date- pd.Timedelta(days=1)
+                
+                start_date = date - pd.Timedelta(days=days_offset+2) if date.weekday() == 0 else date - pd.Timedelta(days=days_offset)
                 end_date = date + pd.DateOffset(days=1)
                 print(f"{sym}: {date} ({weekday_to_string(date.weekday())}) creating chart using dates {start_date}-{end_date}")
 
                 filtered_df = df.loc[f"{start_date}":f"{end_date}"]
 
-                for tf in ['5min', '15min']:
+                for tf in transform_tf:
                     filtered_df = utils.transform_timeframe(filtered_df, '1min', tf)
                     # Applies to PM/AH:
                     filtered_df = utils_ta.add_ta(sym, filtered_df, ['EMA10', 'EMA20', 'EMA50'], start_time='09:30', end_time='16:00')
