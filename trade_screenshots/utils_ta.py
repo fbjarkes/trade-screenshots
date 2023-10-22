@@ -39,13 +39,11 @@ def bbands(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def add_ta(symbol: str, df: pd.DataFrame, ta: List[str], start_time = '', end_time = '', separate_by_day=False) -> pd.DataFrame:
-    dfs = []
-    if separate_by_day:        
-        for date, group_df in df.groupby(df.index.date):
-            dfs.append(group_df)
+    if separate_by_day:
+        dfs = [group_df for _, group_df in df.groupby(df.index.date)]
     else:
-        dfs.append(df)
-        
+        dfs = [df]
+    
     result_dfs = []
     for df in dfs:
         if start_time and end_time:
@@ -68,8 +66,6 @@ def add_ta(symbol: str, df: pd.DataFrame, ta: List[str], start_time = '', end_ti
             result_dfs.append(df_ta.combine_first(df))
         else:
             result_dfs.append(df_ta)
+        
+    return pd.concat(result_dfs)
     
-    if len(result_dfs) > 1:
-        return pd.concat(result_dfs)
-    else:
-        return result_dfs[0]
