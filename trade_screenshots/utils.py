@@ -120,6 +120,12 @@ def write_file(fig: Any, filename: str, type: str, width: int, height: int) -> N
 
 
 def parse_txt(filename: str) -> Dict[str, pd.Timestamp]:
+    """
+    Example file content:
+    2023-10-13:SPY,AAPL
+    2023-10-12:META,NVDA
+    ...
+    """
     with open(filename) as f:
         lines = f.readlines()
         sym_map = {}
@@ -127,10 +133,11 @@ def parse_txt(filename: str) -> Dict[str, pd.Timestamp]:
             date, symbols = line.split(':')
             for sym in symbols.split(','):
                 sym = sym.strip()
-                if sym in sym_map:                    
-                    sym_map[sym].append(pd.to_datetime(date))
-                else:
-                    sym_map[sym] = [pd.to_datetime(date)]
+                if sym != '':
+                    if sym in sym_map:                    
+                        sym_map[sym].append(pd.to_datetime(date))
+                    else:
+                        sym_map[sym] = [pd.to_datetime(date)]
         return sym_map
 
 def transform_timeframe(df: pd.DataFrame, timeframe:str, transform:str) -> pd.DataFrame:
