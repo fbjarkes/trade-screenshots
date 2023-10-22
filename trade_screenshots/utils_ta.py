@@ -38,22 +38,38 @@ def bbands(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def add_ta(symbol: str, df: pd.DataFrame, ta: List[str], start_time: str, end_time: str) -> pd.DataFrame:
-    if start_time and end_time:
-        df_ta = df.between_time(start_time, end_time, inclusive='left').copy()
+def add_ta(symbol: str, df: pd.DataFrame, ta: List[str], start_time = '', end_time = '', separate_by_day=False) -> pd.DataFrame:
+    dfs = []
+    if separate_by_day:        
+        for date, group_df in df.groupby(df.index.date):
+            dfs.append(group_df)
     else:
-        df_ta = df
-    if 'VWAP' in ta:
-        df_ta = vwap(df_ta)
-    if 'EMA10' in ta:
-        df_ta = ema(df_ta, 10)
-    if 'EMA20' in ta:
-        df_ta = ema(df_ta, 20)
-    if 'EMA50' in ta:
-        df_ta = ema(df_ta, 50)
-    if 'BB' in ta:
-        df_ta = bbands(df_ta)
-    if start_time and end_time:
-        return df_ta.combine_first(df)
+        dfs.append(df)
+        
+    result_dfs = []
+    for df in dfs:
+        if start_time and end_time:
+            # Filter out rows outside start/end time before applying TA
+            df_ta = df.between_time(start_time, end_time, inclusive='left').copy()
+        else:
+            df_ta = df
+        if 'VWAP' in ta:
+            df_ta = vwap(df_ta)
+        if 'EMA10' in ta:
+            df_ta = ema(df_ta, 10)
+        if 'EMA20' in ta:
+            df_ta = ema(df_ta, 20)
+        if 'EMA50' in ta:
+            df_ta = ema(df_ta, 50)
+        if 'BB' in ta:
+            df_ta = bbands(df_ta)
+        if start_time and end_time:
+            # Stitch the time filtered df (with TA) back together with original df
+            result_dfs.append(df_ta.combine_first(df))
+        else:
+            result_dfs.append(df_ta)
+    
+    if len(result_dfs) > 1:
+        return pd.concat(result_dfs)
     else:
-        return df_ta
+        return result_dfs[0]

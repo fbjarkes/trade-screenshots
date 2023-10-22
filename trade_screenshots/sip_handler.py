@@ -37,10 +37,11 @@ def handle_sip(timeframe, provider, symbols_file, filetype, outdir, paths, ta_pa
 
                 for tf in ['5min', '15min']:
                     filtered_df = utils.transform_timeframe(filtered_df, '1min', tf)
-                        # Applies to PM/AH
-                    filtered_df = utils_ta.add_ta(sym, filtered_df, ['EMA10', 'EMA20', 'EMA50'], start_time=None, end_time=None)
+                    # Applies to PM/AH:
+                    filtered_df = utils_ta.add_ta(sym, filtered_df, ['EMA10', 'EMA20', 'EMA50'], start_time='09:30', end_time='16:00')
+                    filtered_df = utils_ta.add_ta(sym, filtered_df, ['VWAP'], separate_by_day=True)
                     fig = plots.generate_chart(filtered_df, tf, sym, title=f"{sym} {date} ({tf})",
-                                                plot_indicators={key: ta_params[key] for key in ['EMA10', 'EMA20', 'EMA50']})
+                                                plot_indicators={key: ta_params[key] for key in ['EMA10', 'EMA20', 'EMA50', 'VWAP']})
                     utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", filetype, 1600, 900)
         except Exception as e:
             print(f"{sym}: {e}. Skipping.")            
