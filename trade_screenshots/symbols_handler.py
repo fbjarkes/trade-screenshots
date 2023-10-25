@@ -32,6 +32,7 @@ def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end
     print(f"{symbol}: Splitting data into days")
     eth_values = {}
     dfs = utils.split(df, start_time, end_time, eth_values)
+    #TODO: days is not needed? (use start instead)
     if days != 0:
         dfs = dfs[-days:]
 
@@ -61,7 +62,7 @@ def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end
             daily_levels=levels,
         )
 
-        utils.write_file(fig, f"{outdir}/{symbol}-{date}", filetype, 1600, 900)
+        utils.write_file(fig, f"{outdir}/{symbol}-{date.strftime('%Y-%m-%d')}-{timeframe}", filetype, 1600, 900)
 
     print("done")
 
