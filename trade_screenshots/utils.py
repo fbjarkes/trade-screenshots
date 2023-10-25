@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 import json
+import os
 import pandas as pd
 import plotly.io as pio
 from finta import TA
@@ -103,6 +104,11 @@ def split(df: pd.DataFrame, start_time: str, end_time: str, eth_values: Dict[str
 
 
 def write_file(fig: Any, filename: str, type: str, width: int, height: int) -> None:
+    dirs = filename.split('/')
+    if len(dirs) > 1:
+        dir_path = '/'.join(dirs[:-1])
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
     if type == "html":
         fig.write_html(f"{filename}.html")
         print(f"Wrote '{filename}.html'")
