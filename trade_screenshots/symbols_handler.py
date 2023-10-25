@@ -20,6 +20,10 @@ def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end
     if df.empty:
         raise Exception(f"Empty DataFrame for symbol {symbol}")
 
+    if start != '':
+        print(f"{symbol}: filtering df by start date '{start}'")
+        df = df.loc[start:]
+
     print(f"{symbol}: Applying TA to {len(df)} rows")
 
     # TODO: add mid,vwap, daily/ah/pm levels and store in dataframe as constant values? and write test for it?
