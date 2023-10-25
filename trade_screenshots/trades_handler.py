@@ -5,7 +5,7 @@ import trade_screenshots.utils_ta as utils_ta
 
 import pandas as pd
 
-def handle_trades(start, timeframe, transform, provider, trades_file, filetype, outdir, days, start_time, end_time, paths, ta_params):
+def handle_trades(start, timeframe, transform, provider, trades_file, filetype, outdir, days, start_time, end_time, paths, ta_params, rth=True):
     trades = utils.parse_trades(trades_file)
     symbols = list(set([trade.symbol for trade in trades]))
 
@@ -15,6 +15,8 @@ def handle_trades(start, timeframe, transform, provider, trades_file, filetype, 
             df = utils.get_dataframe_tv(start, timeframe, symbol, paths['tv'])
         else:
             df = utils.get_dataframe_alpaca(symbol, timeframe, paths['alpaca-file'])
+            if rth:
+                df = utils.filter_rth(df)
         if df.empty:
             print(f"Empty DataFrame for symbol {symbol}. Skipping")
         else:
@@ -22,7 +24,10 @@ def handle_trades(start, timeframe, transform, provider, trades_file, filetype, 
                 print(f"{symbol}: transforming df from {timeframe} to {transform}")
                 df = utils.transform_timeframe(df, timeframe, transform)
             print(f"{symbol}: Applying TA to {len(df)} rows")
-            df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50', 'BB'], start_time, end_time)
+            if rth:
+                df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50', 'BB'])
+            else: 
+                df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50', 'BB'], start_time, end_time)
             dfs_map[symbol] = df
 
     # last 10 trades:

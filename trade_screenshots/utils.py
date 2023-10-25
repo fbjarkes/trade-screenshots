@@ -142,9 +142,14 @@ def parse_txt(filename: str) -> Dict[str, pd.Timestamp]:
                     symbol_map.setdefault(symbol, []).append(pd.to_datetime(date))
     return symbol_map
 
+
 def transform_timeframe(df: pd.DataFrame, timeframe:str, transform:str) -> pd.DataFrame:
     if timeframe == transform or df.empty:
         return df  # No need to transform
     conversion = {'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'}
     resampled = df.resample(f"{transform}").agg(conversion)
     return resampled.dropna()
+
+def filter_rth(df: pd.DataFrame, start='09:30', end='16:00') -> pd.DataFrame:
+    # Filter out start/end times from df
+    return df.between_time(start, end, inclusive='left')

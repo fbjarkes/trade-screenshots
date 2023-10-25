@@ -40,6 +40,7 @@ def bbands(df: pd.DataFrame) -> pd.DataFrame:
 
 def add_ta(symbol: str, df: pd.DataFrame, ta: List[str], start_time = '', end_time = '', separate_by_day=False) -> pd.DataFrame:
     if separate_by_day:
+        # Apply this TA on a day by day basis, e.g. VWAP or mid
         dfs = [group_df for _, group_df in df.groupby(df.index.date)]
     else:
         dfs = [df]
