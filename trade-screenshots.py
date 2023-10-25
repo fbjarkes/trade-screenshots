@@ -34,7 +34,7 @@ def main(
     filetype="png",
     outdir='images',    
     days=0,
-    transform='5min,15min'
+    transform=''
 ):
     """
     This function generates trade screenshots for a given set of symbols and timeframes.
@@ -48,6 +48,7 @@ def main(
     :param filetype: The file type for the generated trade screenshots.
     :param outdir: The output directory for the generated trade screenshots.
     :param days: The number of days for which to generate trade screenshots, 0 for all available data.
+    :param transform: Transform the original OHLC data into this timeframe
     """
         
     if not os.path.exists(outdir):
@@ -62,7 +63,7 @@ def main(
         handle_symbols(start, timeframe, provider, symbols, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)
 
     elif trades_file:
-        handle_trades(start, timeframe, provider, trades_file, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)     
+        handle_trades(start, timeframe, transform, provider, trades_file, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)     
     
     elif sip_file:
         handle_sip(timeframe, provider, sip_file, filetype, outdir, transform, days, PATHS, TA_PARAMS)
