@@ -72,7 +72,8 @@ def handle_sip(config: SipConfig):
                     filtered_df = utils_ta.add_ta(sym, filtered_df, ['EMA10', 'EMA20', 'EMA50'], start_time='09:30', end_time='16:00')
                     filtered_df = utils_ta.add_ta(sym, filtered_df, ['VWAP'], separate_by_day=True)
                     fig = plots.generate_chart(filtered_df, tf, sym, title=f"{sym} {date} ({tf})",
-                                                plot_indicators={key: ta_params[key] for key in ['EMA10', 'EMA20', 'EMA50', 'VWAP']})
+                                                plot_indicators={key: ta_params[key] for key in ['EMA10', 'EMA20', 'EMA50', 'VWAP']},
+                                                sip_marker=date)
                     utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", filetype, 1600, 900)
         except Exception as e:
             print(f"{sym}: {e}. Skipping.")            

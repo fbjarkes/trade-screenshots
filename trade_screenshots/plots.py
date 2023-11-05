@@ -55,7 +55,7 @@ def generate_trade_chart(trade, df, tf, title, plot_indicators, config):
     return fig
 
 
-def generate_chart(df, tf, symbol, title, plot_indicators=None, or_times=None, daily_levels=None):
+def generate_chart(df, tf, symbol, title, plot_indicators=None, or_times=None, daily_levels=None, sip_marker=None):
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01, row_heights=[0.8, 0.2])
 
     candlestick = go.Candlestick(
@@ -86,6 +86,10 @@ def generate_chart(df, tf, symbol, title, plot_indicators=None, or_times=None, d
 
     shapes = []
     annotations = []
+    
+    if sip_marker is not None:                
+        annotations.append(dict(x=sip_marker, y=df['Low'].min(), text=f"SIP start", ay=-10, showarrow=False, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)))    
+    
     if or_times:
         lowest, highest = utils_ta.or_levels(df, or_times)
         # TODO: a more simple way to select 10:30? e.g. bar 12?
@@ -102,15 +106,17 @@ def generate_chart(df, tf, symbol, title, plot_indicators=None, or_times=None, d
         shapes.append(dict(x0=df.index[0], x1=df.index[-1], y0=daily_levels['high_1'], y1=daily_levels['high_1'], line_dash='longdash', line_color='green', opacity=0.3))
         shapes.append(dict(x0=df.index[0], x1=df.index[-1], y0=daily_levels['eth_high'], y1=daily_levels['eth_high'], line_dash='longdash', line_color='blue', opacity=0.2))
         shapes.append(dict(x0=df.index[0], x1=df.index[-1], y0=daily_levels['eth_low'], y1=daily_levels['eth_low'], line_dash='longdash', line_color='blue', opacity=0.2))
-        annotations = [
+        annotations += [
             dict(x=df.index[0], y=daily_levels['close_1'], xref='x', yref='y', showarrow=False, xanchor='left', text='yclose'),
             dict(x=df.index[0], y=daily_levels['high_1'], xref='x', yref='y', showarrow=False, xanchor='left', text='yhigh'),
             dict(x=df.index[0], y=daily_levels['low_1'], xref='x', yref='y', showarrow=False, xanchor='left', text='ylow'),
             dict(x=df.index[0], y=daily_levels['eth_high'], xref='x', yref='y', showarrow=False, xanchor='left', text='eth_high'),
             dict(x=df.index[0], y=daily_levels['eth_low'], xref='x', yref='y', showarrow=False, xanchor='left', text='eth_low'),
         ]
-    if shapes and annotations:
-        fig.update_layout(shapes=shapes, annotations=annotations)
+    if shapes:
+        fig.update_layout(shapes=shapes)
+    if annotations:
+        fig.update_layout(annotations=annotations)
     fig.update_layout(showlegend=False)
     fig.update_layout(xaxis_rangeslider_visible=False)
     fig.update_layout(title=title)
