@@ -74,6 +74,7 @@ def main(
             outdir=outdir,
             transform=transform,
             days_before=days,
+            days_after=1,
             paths=PATHS,
             ta_params=TA_PARAMS,
         )
