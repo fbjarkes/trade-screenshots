@@ -60,15 +60,13 @@ def handle_sip(config: SipConfig):
             # 3. plot chart for each date, including ah/pm,
             for date in dates_sorted:
                 # TODO: parallelize this loop:                
-                start_date = date - pd.Timedelta(days=days_before+2) if date.weekday() == 0 else date - pd.Timedelta(days=days_before)
-                end_date = date + pd.DateOffset(days=days_after+1)
+                start_date, end_date = utils.get_plot_dates_weekend_adjusted(date, days_before, days_after)
                 print(f"{sym}: {date} ({weekday_to_string(date.weekday())}) creating chart using dates {start_date}-{end_date}")
 
                 filtered_df = df.loc[f"{start_date}":f"{end_date}"]
 
                 for tf in timeframes_to_plot:
                     filtered_df = utils.transform_timeframe(filtered_df, timeframe, tf)
-                    # Applies to PM/AH:
                     filtered_df = utils_ta.add_ta(sym, filtered_df, ['EMA10', 'EMA20', 'EMA50'], start_time='09:30', end_time='16:00')
                     filtered_df = utils_ta.add_ta(sym, filtered_df, ['VWAP'], separate_by_day=True)
                     fig = plots.generate_chart(filtered_df, tf, sym, title=f"{sym} {date} ({tf})",

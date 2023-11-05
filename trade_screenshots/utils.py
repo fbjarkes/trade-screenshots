@@ -6,7 +6,7 @@ import os
 import pandas as pd
 import plotly.io as pio
 from finta import TA
-from typing import Any, List, Dict, Union
+from typing import Any, List, Dict, Tuple, Union
 
 
 @dataclass
@@ -124,6 +124,28 @@ def write_file(fig: Any, filename: str, type: str, width: int, height: int) -> N
     else:
         raise ValueError("Unsupported file type:", type)
 
+def get_plot_dates_weekend_adjusted(date: pd.Timestamp, days_before: int, days_after: int) -> Tuple[pd.Timestamp, pd.Timestamp]:
+    if days_before == 0:
+        start_date = date
+    else:
+        if date.weekday() == 0:
+            start_date = date - pd.Timedelta(days=days_before+2)
+        elif date.weekday() == 1:
+            start_date = date - pd.Timedelta(days=days_before+(2 if days_before > 1 else 0))
+        elif date.weekday() == 2:
+            start_date = date - pd.Timedelta(days=days_before+(2 if days_before > 2 else 0))
+        elif date.weekday() == 3:
+            start_date = date - pd.Timedelta(days=days_before+(2 if days_before > 3 else 0))
+        elif date.weekday() == 4:
+            start_date = date - pd.Timedelta(days=days_before+(2 if days_before > 4 else 0))
+    
+    if days_after == 0:
+        end_date = date + pd.Timedelta(days=1)
+    else:
+        end_date = date + pd.Timedelta(days=days_after)
+    
+    return start_date, end_date
+
 
 def parse_txt(filename: str) -> Dict[str, pd.Timestamp]:
     """
@@ -146,6 +168,7 @@ def parse_txt(filename: str) -> Dict[str, pd.Timestamp]:
 
 
 def transform_timeframe(df: pd.DataFrame, timeframe:str, transform:str) -> pd.DataFrame:
+    # TODO: only allow resample from low to high?     
     if timeframe == transform or df.empty:
         return df  # No need to transform
     conversion = {'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'}
