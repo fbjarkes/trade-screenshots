@@ -3,7 +3,7 @@ import time
 import traceback
 import os
 import fire
-from trade_screenshots.sip_handler import handle_sip
+from trade_screenshots.sip_handler import SipConfig, handle_sip
 from trade_screenshots.symbols_handler import handle_symbols
 from trade_screenshots.trades_handler import handle_trades
 
@@ -24,7 +24,7 @@ TA_PARAMS = {
 
 def main(
     start="2023-01-01",  # TODO: start date needed?
-    timeframe="1min",  # only allow '<integer>min'
+    timeframe="5min",  # only allow '<integer>min'
     provider="alpaca-file",
     symbols=None, #"2023-10-02_NVDA",
     # trades_file='trades.csv'
@@ -33,7 +33,7 @@ def main(
     trading_hour='09:30-16:00',  # Assume OHLC data is in market time for symbol in question
     filetype="png",
     outdir='images',    
-    days=0,
+    days=3,
     transform=''
 ):
     """
@@ -66,7 +66,18 @@ def main(
         handle_trades(start, timeframe, transform, provider, trades_file, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)     
     
     elif sip_file:
-        handle_sip(timeframe, provider, sip_file, filetype, outdir, transform, days, PATHS, TA_PARAMS)
+        config = SipConfig(
+            timeframe=timeframe,
+            symbols_file=sip_file,
+            provider=provider,
+            filetype=filetype,
+            outdir=outdir,
+            transform=transform,
+            days_before=days,
+            paths=PATHS,
+            ta_params=TA_PARAMS,
+        )
+        handle_sip(config)
     else:
         raise ValueError("symbols, trades_file, or sip_file must be provided")
 

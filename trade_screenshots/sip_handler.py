@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import trade_screenshots.plots as plots
 import trade_screenshots.utils as utils
 from trade_screenshots import utils_ta
@@ -7,21 +8,42 @@ from trade_screenshots.common import VALID_TIME_FRAMES, weekday_to_string
 import pandas as pd
 
 
-def handle_sip(timeframe, provider, symbols_file, filetype, outdir, transform, days, paths, ta_params):
-    symbol_dates = utils.parse_txt(symbols_file)
+@dataclass
+class SipConfig:
+    timeframe: str
+    provider: str
+    symbols_file: str
+    filetype: str
+    outdir: str
+    transform: str    
+    paths: dict
+    ta_params: dict
+    days_before: int = 3
+    days_after: int = 0
+
+def handle_sip(config: SipConfig):
+    symbol_dates = utils.parse_txt(config.symbols_file)
+    timeframe = config.timeframe
+    provider = config.provider
+    filetype = config.filetype
+    outdir = config.outdir
+    transform = config.transform
+    days_before = config.days_before
+    paths = config.paths
+    ta_params = config.ta_params
+    
     if transform != '':
         timeframes_to_plot = transform.split(',')
         if not all(tf in VALID_TIME_FRAMES for tf in timeframes_to_plot):
             raise ValueError(f"Invalid timeframe in transform '{transform}'")
     else:
         timeframes_to_plot = [timeframe]
-    days_offset = days if days > 0 else 3
+    days_before_offset = days_before if days_before > 0 else 3
     
     for sym in symbol_dates.keys():
         try:
-            # 1. get df from first to last date present including 3 extra days if first date is a Monday
             dates_sorted = sorted(symbol_dates[sym])            
-            first_date = dates_sorted[0] - pd.Timedelta(days=days_offset)
+            first_date = dates_sorted[0] - pd.Timedelta(days=days_before_offset)
             last_date = dates_sorted[-1]
             print(f"{sym}: getting df for {first_date} - {last_date}")
             if provider == 'tv':
@@ -38,7 +60,7 @@ def handle_sip(timeframe, provider, symbols_file, filetype, outdir, transform, d
             for date in dates_sorted:
                 # TODO: parallelize this loop:
                 
-                start_date = date - pd.Timedelta(days=days_offset+2) if date.weekday() == 0 else date - pd.Timedelta(days=days_offset)
+                start_date = date - pd.Timedelta(days=days_before_offset+2) if date.weekday() == 0 else date - pd.Timedelta(days=days_before_offset)
                 end_date = date + pd.DateOffset(days=1)
                 print(f"{sym}: {date} ({weekday_to_string(date.weekday())}) creating chart using dates {start_date}-{end_date}")
 
