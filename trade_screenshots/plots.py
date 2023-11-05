@@ -71,13 +71,18 @@ def generate_daily_chart(df, symbol, title, sip_marker=None):
     annotations = []
     
     if sip_marker is not None:                
-        annotations.append(dict(x=sip_marker, y=df['Low'].min(), text=f"SIP start", ay=-10, showarrow=False, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)))    
+        annotations.append(dict(x=sip_marker, y=df['Low'].min(), text=f"SIP start", ay=100, showarrow=True, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)))    
     
     if annotations:
         fig.update_layout(annotations=annotations)
     fig.update_layout(showlegend=False)
     fig.update_layout(xaxis_rangeslider_visible=False)
     fig.update_layout(title=title)
+    
+    # Remove weekends from fig using rangebreaks
+    #dt_all = pd.date_range(start=df.index[0], end=df.index[-1], freq='day')
+    #dt_breaks = [d for d in dt_all.strftime("%Y-%m-%d %H:%M:%S").tolist() if not d in df.index]
+    #fig.update_xaxes(rangebreaks=[dict(dvalue=2 * 24 * 60 * 60 * 1000, values=dt_breaks)])
     
     return fig
 
