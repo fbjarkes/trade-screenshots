@@ -135,6 +135,8 @@ def parse_txt(filename: str) -> Dict[str, pd.Timestamp]:
     symbol_map = {}
     with open(filename) as f:
         for line in f:
+            if line.startswith('#'):
+                continue
             date, symbols = line.strip().split(':')
             for symbol in symbols.split(','):
                 symbol = symbol.strip()
