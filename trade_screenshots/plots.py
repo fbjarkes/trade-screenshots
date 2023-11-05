@@ -54,6 +54,32 @@ def generate_trade_chart(trade, df, tf, title, plot_indicators, config):
 
     return fig
 
+def generate_daily_chart(df, symbol, title, sip_marker=None):
+    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01, row_heights=[0.8, 0.2])
+    candlestick = go.Candlestick(
+        x=df.index,
+        open=df['Open'],
+        high=df['High'],
+        low=df['Low'],
+        close=df['Close'],
+        name=symbol,
+    )
+    volume = go.Bar(x=df.index, y=df['Volume'], name='Volume', marker=dict(color='blue'))
+    fig.add_trace(candlestick, row=1, col=1)    
+    fig.add_trace(volume, row=2, col=1)
+    
+    annotations = []
+    
+    if sip_marker is not None:                
+        annotations.append(dict(x=sip_marker, y=df['Low'].min(), text=f"SIP start", ay=-10, showarrow=False, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)))    
+    
+    if annotations:
+        fig.update_layout(annotations=annotations)
+    fig.update_layout(showlegend=False)
+    fig.update_layout(xaxis_rangeslider_visible=False)
+    fig.update_layout(title=title)
+    
+    return fig
 
 def generate_chart(df, tf, symbol, title, plot_indicators=None, or_times=None, daily_levels=None, sip_marker=None):
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01, row_heights=[0.8, 0.2])

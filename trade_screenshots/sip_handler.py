@@ -21,6 +21,7 @@ class SipConfig:
     days_before: int = 3
     days_after: int = 0
     rth_ta: bool = True
+    gen_daily: bool = False
 
 def handle_sip(config: SipConfig):
     symbol_dates = utils.parse_txt(config.symbols_file)
@@ -43,6 +44,7 @@ def handle_sip(config: SipConfig):
     
     for sym in symbol_dates.keys():
         try:
+            daily_df = None
             dates_sorted = sorted(symbol_dates[sym])            
             first_date = dates_sorted[0] - pd.Timedelta(days=days_before)
             last_date = dates_sorted[-1] + pd.Timedelta(days=days_after)
@@ -50,9 +52,13 @@ def handle_sip(config: SipConfig):
             print(f"{sym}: getting df for {first_date} - {last_date}")
             if provider == 'tv':
                 df = utils.get_dataframe_tv(first_date, timeframe, sym, paths['tv'])
+                if config.gen_daily:
+                    daily_df = utils.get_dataframe_tv(first_date, 'day', sym, paths['tv'])
             else:
                 df = utils.get_dataframe_alpaca(sym, timeframe, paths['alpaca-file'])
-            print(f"{sym}: df start={df.index[0]} end={df.index[-1]}")
+                if config.gen_daily:
+                    daily_df = utils.get_dataframe_alpaca(sym, 'day', paths['alpaca-file'])
+            print(f"{sym}: df start={df.index[0]} end={df.index[-1]} (df_daily={((len(daily_df)) if config.gen_daily else 'N/A')})")
 
                 
             if first_date < df.index[0] or last_date > df.index[-1]:
@@ -77,5 +83,15 @@ def handle_sip(config: SipConfig):
                                                 plot_indicators={key: ta_params[key] for key in ['EMA10', 'EMA20', 'EMA50', 'VWAP']},
                                                 sip_marker=date)
                     utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", filetype, 1600, 900)
+                if config.gen_daily:
+                    daily_days_before = 100
+                    daily_days_after = 20
+                    start_date = date - pd.Timedelta(days=daily_days_before)
+                    end_date = date + pd.Timedelta(days=daily_days_after)
+                    daily_chart_df = daily_df.loc[f"{start_date}":f"{end_date}"]
+                    fig = plots.generate_daily_chart(daily_chart_df, sym, title=f"{sym} {date} (daily)", sip_marker=date)
+                    utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-daily", filetype, 1600, 900)
+                    
+        
         except Exception as e:
             print(f"{sym}: {e}. Skipping.")            
