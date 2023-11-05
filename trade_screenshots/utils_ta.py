@@ -51,7 +51,7 @@ def add_ta(symbol: str, df: pd.DataFrame, ta: List[str], start_time = '', end_ti
             # Filter out rows outside start/end time before applying TA
             df_ta = df.between_time(start_time, end_time, inclusive='left').copy()
         else:
-            df_ta = df
+            df_ta = df.copy()
         if 'VWAP' in ta:
             df_ta = vwap(df_ta)
         if 'EMA10' in ta:

@@ -20,6 +20,7 @@ class SipConfig:
     ta_params: dict
     days_before: int = 3
     days_after: int = 0
+    rth_ta: bool = True
 
 def handle_sip(config: SipConfig):
     symbol_dates = utils.parse_txt(config.symbols_file)
@@ -63,13 +64,16 @@ def handle_sip(config: SipConfig):
                 start_date, end_date = utils.get_plot_dates_weekend_adjusted(date, days_before, days_after)
                 print(f"{sym}: {date} ({weekday_to_string(date.weekday())}) creating chart using dates {start_date}-{end_date}")
 
-                filtered_df = df.loc[f"{start_date}":f"{end_date}"]
+                chart_df = df.loc[f"{start_date}":f"{end_date}"]
 
                 for tf in timeframes_to_plot:
-                    filtered_df = utils.transform_timeframe(filtered_df, timeframe, tf)
-                    filtered_df = utils_ta.add_ta(sym, filtered_df, ['EMA10', 'EMA20', 'EMA50'], start_time='09:30', end_time='16:00')
-                    filtered_df = utils_ta.add_ta(sym, filtered_df, ['VWAP'], separate_by_day=True)
-                    fig = plots.generate_chart(filtered_df, tf, sym, title=f"{sym} {date} ({tf})",
+                    chart_df = utils.transform_timeframe(chart_df, timeframe, tf)
+                    if config.rth_ta:                    
+                        chart_df = utils_ta.add_ta(sym, chart_df, ['EMA10', 'EMA20', 'EMA50'], start_time='09:30', end_time='16:00')
+                    else:
+                        chart_df = utils_ta.add_ta(sym, chart_df, ['EMA10', 'EMA20', 'EMA50'])
+                    chart_df = utils_ta.add_ta(sym, chart_df, ['VWAP'], separate_by_day=True)
+                    fig = plots.generate_chart(chart_df, tf, sym, title=f"{sym} {date} ({tf})",
                                                 plot_indicators={key: ta_params[key] for key in ['EMA10', 'EMA20', 'EMA50', 'VWAP']},
                                                 sip_marker=date)
                     utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", filetype, 1600, 900)
