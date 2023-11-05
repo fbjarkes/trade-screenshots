@@ -9,10 +9,13 @@ import pandas as pd
 
 def handle_sip(timeframe, provider, symbols_file, filetype, outdir, transform, days, paths, ta_params):
     symbol_dates = utils.parse_txt(symbols_file)
-    transform_tf = transform.split(',')        
+    if transform != '':
+        timeframes_to_plot = transform.split(',')
+        if not all(tf in VALID_TIME_FRAMES for tf in timeframes_to_plot):
+            raise ValueError(f"Invalid timeframe in transform '{transform}'")
+    else:
+        timeframes_to_plot = [timeframe]
     days_offset = days if days > 0 else 3
-    if not all(tf in VALID_TIME_FRAMES for tf in transform_tf):
-        raise ValueError(f"Invalid timeframe in transform '{transform}'")
     
     for sym in symbol_dates.keys():
         try:
@@ -41,8 +44,8 @@ def handle_sip(timeframe, provider, symbols_file, filetype, outdir, transform, d
 
                 filtered_df = df.loc[f"{start_date}":f"{end_date}"]
 
-                for tf in transform_tf:
-                    filtered_df = utils.transform_timeframe(filtered_df, '1min', tf)
+                for tf in timeframes_to_plot:
+                    filtered_df = utils.transform_timeframe(filtered_df, timeframe, tf)
                     # Applies to PM/AH:
                     filtered_df = utils_ta.add_ta(sym, filtered_df, ['EMA10', 'EMA20', 'EMA50'], start_time='09:30', end_time='16:00')
                     filtered_df = utils_ta.add_ta(sym, filtered_df, ['VWAP'], separate_by_day=True)
