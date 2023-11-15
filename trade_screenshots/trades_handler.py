@@ -5,11 +5,13 @@ import trade_screenshots.utils_ta as utils_ta
 
 import pandas as pd
 
-def handle_trades(start, timeframe, transform, provider, trades_file, filetype, outdir, days, start_time, end_time, paths, ta_params, rth=True):
+#TODO: fix config class like sip_handler
+def handle_trades(start, timeframe, transform, provider, trades_file, filetype, outdir, days, start_time, end_time, paths, ta_params, rth=True, gen_daily=True):
     trades = utils.parse_trades(trades_file)
     symbols = list(set([trade.symbol for trade in trades]))
 
     dfs_map = {}
+    dfs_daily_map = {}
     for symbol in symbols:
         if provider == 'tv':
             df = utils.get_dataframe_tv(start, timeframe, symbol, paths['tv'])
@@ -17,6 +19,8 @@ def handle_trades(start, timeframe, transform, provider, trades_file, filetype, 
             df = utils.get_dataframe_alpaca(symbol, timeframe, paths['alpaca-file'])
             if rth:
                 df = utils.filter_rth(df)
+            if gen_daily:
+                daily_df = utils.get_dataframe_alpaca(symbol, 'day', paths['alpaca-file'])
         if df.empty:
             print(f"Empty DataFrame for symbol {symbol}. Skipping")
         else:
@@ -29,6 +33,8 @@ def handle_trades(start, timeframe, transform, provider, trades_file, filetype, 
             else: 
                 df = utils_ta.add_ta(symbol, df, ['EMA10', 'EMA20', 'EMA50', 'BB'], start_time, end_time)
             dfs_map[symbol] = df
+            if gen_daily:
+                dfs_daily_map[symbol] = daily_df
 
     # last 10 trades:
     #trades = trades[-10:]
@@ -49,12 +55,14 @@ def handle_trades(start, timeframe, transform, provider, trades_file, filetype, 
         date_suffix = trade.start_dt[:16].replace(' ', '_').replace(':', '')
         utils.write_file(fig, f"{outdir}/{trade.symbol}-{date_suffix}-{timeframe}", filetype, 1600, 900)
 
-        #TODO: daily chart context
-        # if config.gen_daily:
-        #             daily_days_before = 100
-        #             daily_days_after = 20
-        #             start_date = date - pd.Timedelta(days=daily_days_before)
-        #             end_date = date + pd.Timedelta(days=daily_days_after)
-        #             daily_chart_df = daily_df.loc[f"{start_date}":f"{end_date}"]
-        #             fig = plots.generate_daily_chart(daily_chart_df, sym, title=f"{sym} {date} (daily)", sip_marker=date)
-        #             utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-daily", filetype, 1600, 900)
+        #if config.gen_daily:
+        if gen_daily:
+            daily_df = dfs_daily_map[trade.symbol]
+            daily_days_before = 100
+            daily_days_after = 20
+            date = pd.to_datetime(trade.start_dt)
+            start_date = date - pd.Timedelta(days=daily_days_before)
+            end_date = date + pd.Timedelta(days=daily_days_after)
+            daily_chart_df = daily_df.loc[f"{start_date}":f"{end_date}"]
+            fig = plots.generate_daily_chart(daily_chart_df, trade.symbol, title=f"{trade.symbol} {date} (daily)", sip_marker=date)
+            utils.write_file(fig, f"{outdir}/{trade.symbol}-{date_suffix}-daily", filetype, 1600, 900)

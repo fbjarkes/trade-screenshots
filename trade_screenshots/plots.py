@@ -71,8 +71,11 @@ def generate_daily_chart(df, symbol, title, sip_marker=None):
     annotations = []
     
     if sip_marker is not None:
-        y_pos = df['Low'].min() + 1.5 * ((df['Close'][sip_marker] - df['Low'].min()) / 2)          
-        annotations.append(dict(x=sip_marker, y=y_pos, text=f"SIP start", ay=100, showarrow=True, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)))    
+        # remove hours/min from pd.datetime
+        marker_day = pd.to_datetime(sip_marker.date())
+        print(marker_day)        
+        y_pos = df['Low'].min() + 1.5 * ((df['Close'][marker_day] - df['Low'].min()) / 2)          
+        annotations.append(dict(x=marker_day, y=y_pos, text=f"SIP start", ay=100, showarrow=True, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)))    
     
     if annotations:
         fig.update_layout(annotations=annotations)
