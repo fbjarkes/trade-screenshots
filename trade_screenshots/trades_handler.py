@@ -36,8 +36,7 @@ def handle_trades(start, timeframe, transform, provider, trades_file, filetype, 
         df = dfs_map[trade.symbol]
         start_date = pd.to_datetime(trade.start_dt).date() - pd.Timedelta(days=days)
         end_date = pd.to_datetime(trade.end_dt).date() + pd.Timedelta(days=days)
-        df = df.loc[f"{start_date}":f"{end_date}"]
-        # TODO: add daily chart as context, new image or combine both into large image
+        df = df.loc[f"{start_date}":f"{end_date}"]        
         fig = plots.generate_trade_chart(
                 trade,
                 df,
@@ -46,7 +45,16 @@ def handle_trades(start, timeframe, transform, provider, trades_file, filetype, 
                 plot_indicators=['EMA10', 'EMA20', 'EMA50', 'BB_UPPER', 'BB_LOWER'],
                 config=ta_params,
             )
-            # format date like "2023-01-01_1500"
+            # format date like "2023-01-01_1500"        
+        date_suffix = trade.start_dt[:16].replace(' ', '_').replace(':', '')
+        utils.write_file(fig, f"{outdir}/{trade.symbol}-{date_suffix}-{timeframe}", filetype, 1600, 900)
 
-        suffix = trade.start_dt[:16].replace(' ', '_').replace(':', '')
-        utils.write_file(fig, f"{outdir}/trades/{trade.symbol}-{suffix}", filetype, 1600, 900)
+        #TODO: daily chart context
+        # if config.gen_daily:
+        #             daily_days_before = 100
+        #             daily_days_after = 20
+        #             start_date = date - pd.Timedelta(days=daily_days_before)
+        #             end_date = date + pd.Timedelta(days=daily_days_after)
+        #             daily_chart_df = daily_df.loc[f"{start_date}":f"{end_date}"]
+        #             fig = plots.generate_daily_chart(daily_chart_df, sym, title=f"{sym} {date} (daily)", sip_marker=date)
+        #             utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-daily", filetype, 1600, 900)
