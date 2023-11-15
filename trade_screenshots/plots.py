@@ -50,7 +50,7 @@ def generate_trade_chart(trade, df, tf, title, plot_indicators, config):
     #                            '2023-09-30 08:00:00', '2023-09-30 11:00:00', '2023-09-30 14:00:00', '2023-09-30 17:00:00', '2023-09-30 20:00:00',
     #                            '2023-09-30 23:00:00', '2023-10-01 02:00:00', '2023-10-01 05:00:00', '2023-10-01 08:00:00', '2023-10-01 11:00:00', '2023-10-01 14:00:00'])
     minutes = int(tf[:-3]) # TODO: handle other than 'min'?
-    fig.update_xaxes(rangebreaks=[dict(dvalue=minutes * 60 * 1000, values=dt_breaks)])
+    fig.update_xaxes(rangebreaks=[dict(dvalue=minutes * 60 * 1000, values=dt_breaks)]) # dvalue in ms?
 
     return fig
 
@@ -80,9 +80,9 @@ def generate_daily_chart(df, symbol, title, sip_marker=None):
     fig.update_layout(title=title)
     
     # Remove weekends from fig using rangebreaks
-    #dt_all = pd.date_range(start=df.index[0], end=df.index[-1], freq='day')
-    #dt_breaks = [d for d in dt_all.strftime("%Y-%m-%d %H:%M:%S").tolist() if not d in df.index]
-    #fig.update_xaxes(rangebreaks=[dict(dvalue=2 * 24 * 60 * 60 * 1000, values=dt_breaks)])
+    dt_all = pd.date_range(start=df.index[0], end=df.index[-1], freq='1D')
+    dt_breaks = [d for d in dt_all.strftime("%Y-%m-%d %H:%M:%S").tolist() if not d in df.index]    
+    fig.update_xaxes(rangebreaks=[dict(dvalue=1 * 24 * 60 * 60 * 1000, values=dt_breaks)])
     
     return fig
 

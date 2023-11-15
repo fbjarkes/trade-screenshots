@@ -94,4 +94,6 @@ def handle_sip(config: SipConfig):
                     
         
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             print(f"{sym}: {e}. Skipping.")            
