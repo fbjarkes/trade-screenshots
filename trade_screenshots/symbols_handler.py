@@ -15,7 +15,7 @@ def write_chart(df, timeframe, outdir):
     filepath =  f"{outdir}/{symbol}-{date.strftime('%Y-%m-%d')}-{timeframe}" if outdir else f"{symbol}-{date.strftime('%Y-%m-%d')}-{timeframe}" 
     utils.write_file(fig, filepath, 'png', 1600, 900)
 
-def handle_trade(symbols, start, end, timeframe, provider, outdir, path):
+def create_charts(symbols, start, end, timeframe, provider, outdir, path):
     dfs = []
     for symbol in symbols:
         if provider == 'tv':
@@ -102,7 +102,7 @@ def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end
     print("done")
 
 
-def handle_symbols(start, end, timeframe, provider, symbols, filetype, outdir, days, start_time, end_time, paths, ta_params):
+def create_charts_day_by_day(start, end, timeframe, provider, symbols, filetype, outdir, days, start_time, end_time, paths, ta_params):
     if isinstance(symbols, tuple):
         symbols = list(symbols)
     elif ',' in symbols:

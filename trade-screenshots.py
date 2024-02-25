@@ -4,7 +4,7 @@ import traceback
 import os
 import fire
 from trade_screenshots.sip_handler import SipConfig, handle_sip
-from trade_screenshots.symbols_handler import handle_symbols, handle_trade
+from trade_screenshots.symbols_handler import create_charts_day_by_day, create_charts
 from trade_screenshots.trades_handler import handle_trades
 
 
@@ -64,9 +64,9 @@ def main(
     
     if symbols:
         if end:
-            handle_trade(symbols, start, end, timeframe, provider, outdir, bardata_path)
+            create_charts(symbols, start, end, timeframe, provider, outdir, bardata_path)
         else:
-            handle_symbols(start, end, timeframe, provider, symbols, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)
+            create_charts_day_by_day(start, end, timeframe, provider, symbols, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)
     elif trades_file:
         handle_trades(start, timeframe, transform, provider, trades_file, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)     
     
