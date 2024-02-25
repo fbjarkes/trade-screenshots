@@ -4,11 +4,11 @@ import traceback
 import os
 import fire
 from trade_screenshots.sip_handler import SipConfig, handle_sip
-from trade_screenshots.symbols_handler import handle_symbols
+from trade_screenshots.symbols_handler import handle_symbols, handle_trade
 from trade_screenshots.trades_handler import handle_trades
 
 
-PATHS = {'tv': '~/Bardata/tradingview', 'alpaca-file': '/Users/fbjarkes/Bardata/alpaca-v2'}
+PATHS = {'tv': '~/Bardata/tradingview', 'alpaca-file': '/Users/fbjarkes/Bardata/alpaca-v2', 'alpaca-file-2016': '/Users/fbjarkes/Bardata/alpaca-v2/2016-2023'}
 
 TA_PARAMS = {
     'VWAP': {'color': 'yellow'},
@@ -22,17 +22,21 @@ TA_PARAMS = {
     'Jlines': {'color': 'green'}
 }
 
+# PATH/PLTR/DASH: 2023-05-09 04:00:00 - 2023-05-12 06:00:00
+
 def main(
     start="2023-01-01",  # TODO: start date needed?
-    timeframe="5min",  # only allow '<integer>min'
+    end='',
+    timeframe="15min",  # only allow '<integer>min'
     provider="alpaca-file",
+    path='',
     symbols=None, #"2023-10-02_NVDA",
-    # trades_file='trades.csv'
+    #trades_file='test_trades.csv',
     trades_file=None,
     sip_file='stocks_in_play.txt',
     trading_hour='09:30-16:00',  # Assume OHLC data is in market time for symbol in question
     filetype="png",
-    outdir='images',    
+    outdir='',    
     days=3,
     transform=''
 ):
@@ -50,9 +54,8 @@ def main(
     :param days: The number of days for which to generate trade screenshots, 0 for all available data.
     :param transform: Transform the original OHLC data into this timeframe
     """
-        
-    if not os.path.exists(outdir):
-        raise Exception(f"Output directory '{outdir}' does not exist")
+    
+    bardata_path = path if path else PATHS[provider]
     
     if trading_hour:
         start_time, end_time = trading_hour.split("-")
@@ -60,8 +63,10 @@ def main(
         start_time, end_time = None, None
     
     if symbols:
-        handle_symbols(start, timeframe, provider, symbols, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)
-
+        if end:
+            handle_trade(symbols, start, end, timeframe, provider, outdir, bardata_path)
+        else:
+            handle_symbols(start, end, timeframe, provider, symbols, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)
     elif trades_file:
         handle_trades(start, timeframe, transform, provider, trades_file, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)     
     
@@ -73,10 +78,11 @@ def main(
             filetype=filetype,
             outdir=outdir,
             transform=transform,
-            days_before=days,
-            days_after=1,
+            days_before=3,
+            days_after=3,
             paths=PATHS,
             ta_params=TA_PARAMS,
+            gen_daily=True
         )
         handle_sip(config)
     else:

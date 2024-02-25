@@ -6,6 +6,41 @@ import trade_screenshots.utils as utils
 from trade_screenshots import utils_ta
 from trade_screenshots.common import try_process_symbol
 
+
+def write_chart(df, timeframe, outdir):    
+    symbol = df.attrs['symbol']
+    print(f"Creating chart {symbol}: {df.index[0]} - {df.index[-1]}")    
+    date = df.index[0]    
+    fig  = plots.generate_chart(df, timeframe, symbol, title=f"{symbol} {date} ({timeframe})")
+    filepath =  f"{outdir}/{symbol}-{date.strftime('%Y-%m-%d')}-{timeframe}" if outdir else f"{symbol}-{date.strftime('%Y-%m-%d')}-{timeframe}" 
+    utils.write_file(fig, filepath, 'png', 1600, 900)
+
+def handle_trade(symbols, start, end, timeframe, provider, outdir, path):
+    dfs = []
+    for symbol in symbols:
+        if provider == 'tv':
+            df = utils.get_dataframe_tv(start, timeframe, symbol, path)
+        elif provider == 'alpaca-file':
+            df = utils.get_dataframe_alpaca(symbol, timeframe, path)
+        elif provider == 'alpaca':
+            df = utils.download_dataframe_alpaca(start, timeframe, symbol)
+        else:
+            raise ValueError(f"Unknown provider: {provider}")
+        
+        if start:        
+            df = df.loc[start:]
+        if end:        
+            df = df.loc[:end]                    
+        if df.empty:
+            #raise Exception(f"Empty DataFrame for symbol {symbol}")
+            print(f"Skipping empty DataFrame for symbol '{symbol}'")
+        else:
+            dfs.append(df)    
+
+    for df in dfs:
+        write_chart(df, timeframe, outdir)
+
+
 # TODO: use partial decorator ? @functools.partial()
 def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end_time, outdir, days, paths, ta_params):
     if provider == 'tv':
@@ -61,13 +96,13 @@ def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end
             or_times=('09:30', '10:30'),
             daily_levels=levels,
         )
-
-        utils.write_file(fig, f"{outdir}/{symbol}-{date.strftime('%Y-%m-%d')}-{timeframe}", filetype, 1600, 900)
+        filepath =  f"{outdir}/{symbol}-{date.strftime('%Y-%m-%d')}-{timeframe}" if outdir else f"{symbol}-{date.strftime('%Y-%m-%d')}-{timeframe}" 
+        utils.write_file(fig, filepath, filetype, 1600, 900)
 
     print("done")
 
 
-def handle_symbols(start, timeframe, provider, symbols, filetype, outdir, days, start_time, end_time, paths, ta_params):
+def handle_symbols(start, end, timeframe, provider, symbols, filetype, outdir, days, start_time, end_time, paths, ta_params):
     if isinstance(symbols, tuple):
         symbols = list(symbols)
     elif ',' in symbols:
