@@ -158,44 +158,46 @@ def intraday_chart(df: pd.DataFrame, tf: str, symbol: str, title: str, plot_indi
         if tf == '15min':
             shapes.append(dict(x0=pd.Timestamp(b), x1=pd.Timestamp(b), y0=y0, y1=y1.max(), line_dash='dot', opacity=0.5))  
     
-    if levels is not None:        
-        if levels['yday_mid']:
-            # yesterday mid, assuming M15
+    if levels is not None:    
+        #TODO: assuming M15 for intraday (e.g. 26 bars)        
+        if 'yday_mid' in levels:
+            # show mid during first day            
             x_pos_yday_mid_0 = df.index[0]
             x_pos_yday_mid_1 = df.index[25]
-            shapes.append(dict(x0=x_pos_yday_mid_0, x1=x_pos_yday_mid_1, y0=levels['yday_mid']['y_pos'], y1=levels['yday_mid']['y_pos'], line_dash='longdash', line_color='blue', opacity=0.3))
-            annotations.append(dict(x=x_pos_yday_mid_0, y=levels['yday_mid']['y_pos'], xref='x', yref='y', showarrow=False, xanchor='left', text='yday_mid'))
-        if levels['today_mid']:    
-            x_pos_today_mid_0 = df.index[26]
-            x_pos_today_mid_1 = df.index[52]            
-            shapes.append(dict(x0=x_pos_today_mid_0, x1=x_pos_today_mid_1, y0=levels['today_mid'], y1=levels['today_mid'], line_dash='longdash', line_color='blue', opacity=0.3))
-            annotations.append(dict(x=x_pos_today_mid_0, y=levels['today_mid'], xref='x', yref='y', showarrow=False, xanchor='left', text='today_mid'))
-        if levels['close_1']:
+            shapes.append(dict(x0=x_pos_yday_mid_0, x1=x_pos_yday_mid_1, y0=levels['yday_mid'], y1=levels['yday_mid'], line_dash='longdash', line_color='blue', opacity=0.3))
+            annotations.append(dict(x=x_pos_yday_mid_0, y=levels['yday_mid'], xref='x', yref='y', showarrow=False, xanchor='left', text='Yday Mid'))        
+        if 'close_1' in levels:
             x_pos_close_0 = df.index[0]
-            x_pos_close_1 = df.index[-1]
+            x_pos_close_1 = df.index[25]
             shapes.append(dict(x0=x_pos_close_0, x1=x_pos_close_1, y0=levels['close_1'], y1=levels['close_1'], line_dash='dot', line_color='green', opacity=0.4))
             annotations.append(dict(x=x_pos_close_0, y=levels['close_1'], xref='x', yref='y', showarrow=False, xanchor='left', text='close_1'))
-        if levels['low_1']:
+        if 'low_1' in levels:
             x_pos_low_0 = df.index[0]
-            x_pos_low_1 = df.index[-1]
+            x_pos_low_1 = df.index[25]
             shapes.append(dict(x0=x_pos_low_0, x1=x_pos_low_1, y0=levels['low_1'], y1=levels['low_1'], line_dash='longdash', line_color='green', opacity=0.3))
             annotations.append(dict(x=x_pos_low_0, y=levels['low_1'], xref='x', yref='y', showarrow=False, xanchor='left', text='low_1'))
-        if levels['high_1']:
+        if 'high_1' in levels:
             x_pos_high_0 = df.index[0]
-            x_pos_high_1 = df.index[-1]
+            x_pos_high_1 = df.index[25]
             shapes.append(dict(x0=x_pos_high_0, x1=x_pos_high_1, y0=levels['high_1'], y1=levels['high_1'], line_dash='longdash', line_color='green', opacity=0.3))
             annotations.append(dict(x=x_pos_high_0, y=levels['high_1'], xref='x', yref='y', showarrow=False, xanchor='left', text='high_1'))
-        if levels['eth_high']:
+        if 'eth_high' in levels:
             x_pos_eth_high_0 = df.index[0]
-            x_pos_eth_high_1 = df.index[-1]
+            x_pos_eth_high_1 = df.index[25]
             shapes.append(dict(x0=x_pos_eth_high_0, x1=x_pos_eth_high_1, y0=levels['eth_high'], y1=levels['eth_high'], line_dash='longdash', line_color='blue', opacity=0.2))
             annotations.append(dict(x=x_pos_eth_high_0, y=levels['eth_high'], xref='x', yref='y', showarrow=False, xanchor='left', text='eth_high'))
-        if levels['eth_low']:
+        if 'eth_low' in levels:
             x_pos_eth_low_0 = df.index[0]
-            x_pos_eth_low_1 = df.index[-1]
+            x_pos_eth_low_1 = df.index[25]
             shapes.append(dict(x0=x_pos_eth_low_0, x1=x_pos_eth_low_1, y0=levels['eth_low'], y1=levels['eth_low'], line_dash='longdash', line_color='blue', opacity=0.2))
             annotations.append(dict(x=x_pos_eth_low_0, y=levels['eth_low'], xref='x', yref='y', showarrow=False, xanchor='left', text='eth_low'))
-    
+        if 'today_mid' in levels:    
+            #x_pos_today_mid_0 = df.index[26]
+            #x_pos_today_mid_1 = df.index[52]
+            x_pos_today_mid_0 = f"{df.index[0].date()} 09:30"
+            x_pos_today_mid_1 = f"{df.index[0].date()} 15:45"
+            shapes.append(dict(x0=x_pos_today_mid_0, x1=x_pos_today_mid_1, y0=levels['today_mid'], y1=levels['today_mid'], line_dash='longdash', line_color='blue', opacity=0.2))
+            annotations.append(dict(x=x_pos_today_mid_0, y=levels['today_mid'], xref='x', yref='y', showarrow=False, xanchor='left', text='Today Mid'))
     # TODO: add back again in better way if needed
     # if or_times:
     #     lowest, highest = utils_ta.or_levels(df, or_times)
