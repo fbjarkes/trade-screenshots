@@ -34,12 +34,11 @@ def parse_trades(csv_file: str) -> List[Trade]:
                 print(f"Error parsing trade: {e}")
     return trades
 
-
+#TODO: copy latest version to 'python-aux' repo and use here instead
 def load_json_data(symbol: str, path: str) -> Union[Dict[str, List[Dict[str, Union[str, float]]]], None]:
     with open(path) as f:
         json_data = json.load(f)
         return json_data.get(symbol)
-
 
 def process_json_data(data: Dict[str, List[Dict[str, Union[str, float]]]], symbol: str) -> Union[pd.DataFrame, None]:
     if data:
@@ -57,14 +56,12 @@ def process_json_data(data: Dict[str, List[Dict[str, Union[str, float]]]], symbo
 
 def get_dataframe_alpaca(symbol, timeframe, path):
     file_path = f"{path}/{timeframe}/{symbol}.json"
-    print(f"{symbol}: parsing alpaca file data '{file_path}'")
     data = load_json_data(symbol, file_path)
     return process_json_data(data, symbol)
 
 
 def get_dataframe_tv(start: str, timeframe: str, symbol: str, path: str) -> Union[pd.DataFrame, None]:
     file_path = f"{path}/{timeframe}/{symbol}.csv"
-    print(f"{symbol}: parsing tradingview data '{file_path}'")
     try:
         df = pd.read_csv(file_path, index_col='time', parse_dates=False, usecols=['time', 'open', 'high', 'low', 'close', 'Volume'])
         df.index = pd.to_datetime(df.index, unit='s', utc=True).tz_convert('America/New_York').tz_localize(None)

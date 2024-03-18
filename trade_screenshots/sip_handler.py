@@ -52,7 +52,7 @@ def handle_sip(config: SipConfig):
             first_date = dates_sorted[0] - pd.Timedelta(days=days_before)
             last_date = dates_sorted[-1] + pd.Timedelta(days=days_after)
 
-            print(f"{sym}: getting df for {first_date} - {last_date}")
+            #print(f"{sym}: getting df ({timeframe}) from='{first_date}', to='{last_date}'")
             if provider == 'tv':
                 df = utils.get_dataframe_tv(first_date, timeframe, sym, paths['tv'])
                 if config.gen_daily:
@@ -61,7 +61,9 @@ def handle_sip(config: SipConfig):
                 df = utils.get_dataframe_alpaca(sym, timeframe, paths['alpaca-file'])
                 if config.gen_daily:
                     daily_df = utils.get_dataframe_alpaca(sym, 'day', paths['alpaca-file'])
-            print(f"{sym}: df start={df.index[0]} end={df.index[-1]} (df_daily={((len(daily_df)) if config.gen_daily else 'N/A')})")
+            print(f"{sym}: df start='{df.index[0]}' end='{df.index[-1]}'")
+            if config.gen_daily:
+                print(f"{sym}: daily_df start='{daily_df.index[0]}' end='{daily_df.index[-1]}'")
 
                 
             if first_date < df.index[0] or last_date > df.index[-1]:
@@ -71,10 +73,12 @@ def handle_sip(config: SipConfig):
             for date in dates_sorted:
                 # TODO: parallelize this loop:                
                 start_date, end_date = utils.get_plot_dates_weekend_adjusted(date, days_before, days_after)
-                print(f"{sym}: {date} ({weekday_to_string(date.weekday())}) creating chart using dates '{start_date}' to '{end_date}'")
+                print(f"{sym}: creating intraday chart '{start_date}' to '{end_date}', for SIP date='{date}' ({weekday_to_string(date.weekday())})")
 
                 df = df.sort_index() # !?
                 chart_df = df.loc[f"{start_date}":f"{end_date}"]
+                rth_0 = df.loc[f"{start_date} 09:30":f"{start_date} 15:45"]
+                mid = (rth_0['High'].max() + rth_0['Low'].min()) / 2
 
                 for tf in timeframes_to_plot:
                     chart_df = utils.transform_timeframe(chart_df, timeframe, tf)
@@ -84,9 +88,12 @@ def handle_sip(config: SipConfig):
                         chart_df = utils_ta.add_ta(sym, chart_df, ['EMA10', 'EMA20', 'EMA50'])
                     chart_df = utils_ta.add_ta(sym, chart_df, ['VWAP'], separate_by_day=True)
                     fig = plots.intraday_chart(chart_df, tf, sym, title=f"{sym} {date} ({tf})",
-                                                #plot_indicators={key: ta_params[key] for key in ['EMA10', 'EMA20', 'EMA50', 'VWAP']}, #TODO handle ta_params
-                                                marker={'text': f"SIP Start {date.strftime('%Y-%m-%d')}"})
+                                                #plot_indicators={key: ta_params[key] for key in ['EMA10', 'EMA20', 'EMA50', 'VWAP']}, #TODO handle ta_params as class init
+                                                marker={'text': f"SIP Start {date.strftime('%Y-%m-%d')}"},
+                                                levels={'today_mid': mid}
+                                                )
                     utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", 1600, 900)
+                
                 if config.gen_daily:
                     daily_days_before = 100
                     daily_days_after = 20
