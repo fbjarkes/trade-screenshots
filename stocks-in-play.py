@@ -23,12 +23,14 @@ PATHS = {'tv': '~/Bardata/tradingview', 'alpaca-file': '/Users/fbjarkes/Bardata/
 # }
 
 def main(
-    start='',
+    #start='',    
+    start='2024-03-14',                
     timeframe="15min",  # only allow '<integer>min'
     provider="alpaca-file",
-    symbol=None,    
-    sip_file='stocks_in_play.txt',
-    outdir='',    
+    #symbol=None,
+    symbol='SOUN',    
+    sip_file=None,
+    outdir='.',    
     days_before=1,
     days_after=3,
     daily_plot=False,
@@ -51,6 +53,7 @@ def main(
     if symbol:
         config = SipConfig(
             start=start,
+            symbol=symbol,
             timeframe=timeframe,
             symbols_file=None,
             provider=provider,
@@ -64,6 +67,7 @@ def main(
         handle_sip(config)
     elif sip_file:
         config = SipConfig(
+            start=start,
             timeframe=timeframe,
             symbols_file=sip_file,
             provider=provider,
@@ -76,7 +80,7 @@ def main(
         )
         handle_sip(config)
     else:
-        raise ValueError("symbols, trades_file, or sip_file must be provided")
+        raise ValueError("Missing symbol or sip_file")
 
 if __name__ == "__main__":
     fire.Fire(main)

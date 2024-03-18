@@ -18,7 +18,7 @@ class SipConfig:
     outdir: str
     transform: str    
     paths: dict
-    ta_params: dict
+    #ta_params: dict
     days_before: int = 3
     days_after: int = 0
     rth_ta: bool = True
@@ -26,18 +26,17 @@ class SipConfig:
 
 def handle_sip(config: SipConfig):
     if config.symbol:
-        symbol_dates = {config.start: config.symbol}
+        symbol_dates = {config.symbol: [pd.Timestamp(config.start)]}
     else:
         symbol_dates = utils.parse_txt(config.symbols_file)
     timeframe = config.timeframe
     provider = config.provider
-    filetype = config.filetype
     outdir = config.outdir
     transform = config.transform
     days_before = config.days_before
     days_after = config.days_after
     paths = config.paths
-    ta_params = config.ta_params
+    #ta_params = config.ta_params
     
     if transform != '':
         timeframes_to_plot = transform.split(',')
@@ -49,7 +48,7 @@ def handle_sip(config: SipConfig):
     for sym in symbol_dates.keys():
         try:
             daily_df = None
-            dates_sorted = sorted(symbol_dates[sym])            
+            dates_sorted = sorted(symbol_dates[sym])     
             first_date = dates_sorted[0] - pd.Timedelta(days=days_before)
             last_date = dates_sorted[-1] + pd.Timedelta(days=days_after)
 
@@ -66,14 +65,15 @@ def handle_sip(config: SipConfig):
 
                 
             if first_date < df.index[0] or last_date > df.index[-1]:
-                raise ValueError(f"{sym}: Missing data for {first_date} - {last_date} (df={df.index[0]} - {df.index[-1]})")
+                raise ValueError(f"{sym}: Missing data for {first_date} - {last_date} ({timeframe}) (df={df.index[0]} - {df.index[-1]})")
 
             # 3. plot chart for each date, including ah/pm,
             for date in dates_sorted:
                 # TODO: parallelize this loop:                
                 start_date, end_date = utils.get_plot_dates_weekend_adjusted(date, days_before, days_after)
-                print(f"{sym}: {date} ({weekday_to_string(date.weekday())}) creating chart using dates {start_date}-{end_date}")
+                print(f"{sym}: {date} ({weekday_to_string(date.weekday())}) creating chart using dates '{start_date}' to '{end_date}'")
 
+                df = df.sort_index() # !?
                 chart_df = df.loc[f"{start_date}":f"{end_date}"]
 
                 for tf in timeframes_to_plot:
@@ -84,9 +84,9 @@ def handle_sip(config: SipConfig):
                         chart_df = utils_ta.add_ta(sym, chart_df, ['EMA10', 'EMA20', 'EMA50'])
                     chart_df = utils_ta.add_ta(sym, chart_df, ['VWAP'], separate_by_day=True)
                     fig = plots.intraday_chart(chart_df, tf, sym, title=f"{sym} {date} ({tf})",
-                                                plot_indicators={key: ta_params[key] for key in ['EMA10', 'EMA20', 'EMA50', 'VWAP']},
-                                                marker=date)
-                    utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", filetype, 1600, 900)
+                                                #plot_indicators={key: ta_params[key] for key in ['EMA10', 'EMA20', 'EMA50', 'VWAP']}, #TODO handle ta_params
+                                                marker={'text': f"SIP Start {date}"})
+                    utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", 1600, 900)
                 if config.gen_daily:
                     daily_days_before = 100
                     daily_days_after = 20
@@ -94,7 +94,7 @@ def handle_sip(config: SipConfig):
                     end_date = date + pd.Timedelta(days=daily_days_after)
                     daily_chart_df = daily_df.loc[f"{start_date}":f"{end_date}"]
                     fig = plots.daily_chart(daily_chart_df, sym, title=f"{sym} {date} (daily)", sip_marker=date)
-                    utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-daily", filetype, 1600, 900)
+                    utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-daily", 1600, 900)
                     
         
         except Exception as e:

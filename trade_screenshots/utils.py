@@ -103,7 +103,7 @@ def split(df: pd.DataFrame, start_time: str, end_time: str, eth_values: Dict[str
     return dfs
 
 
-def write_file(fig: Any, filename: str, type: str, width: int, height: int, verbose=0) -> None:
+def write_file(fig: Any, filename: str, width: int, height: int, verbose=0) -> None:
     dirs = filename.split('/')
     if len(dirs) > 1:
         dir_path = '/'.join(dirs[:-1])
@@ -135,7 +135,7 @@ def get_plot_dates_weekend_adjusted(date: pd.Timestamp, days_before: int, days_a
     else:
         end_date = date + pd.Timedelta(days=days_after)
     
-    return start_date, end_date
+    return start_date.normalize(), end_date.normalize()
 
 
 def parse_txt(filename: str) -> Dict[str, pd.Timestamp]:
