@@ -21,6 +21,8 @@ def create_chart(df, title, indicators):
     ...
 
 
+#TODO make a plot class with initial (optional TA config) instead of plain functions?
+
 # TODO: either expose Trade type dataclass or just use basic data type or dict
 def trade_chart(trade, df, tf, title, plot_indicators, config):
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01, row_heights=[0.8, 0.2])
@@ -108,7 +110,7 @@ def daily_chart(df: pd.DataFrame, symbol: str, title:str, sip_marker: Optional[p
 
 # TODO: plot indicators dict?
 def intraday_chart(df: pd.DataFrame, tf: str, symbol: str, title: str, plot_indicators: Any = None, marker: Optional[Dict[str, Any]] = None, levels: Optional[Dict[str, Any]] = None):
-    premarket_activity = df.index[0].time() < pd.Timestamp(f"{df.index[0].date()} 09:30").time()
+    add_rth_markers = df.index[0].time() < pd.Timestamp(f"{df.index[0].date()} 09:30").time()
     
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01, row_heights=[0.8, 0.2])
 
@@ -146,11 +148,15 @@ def intraday_chart(df: pd.DataFrame, tf: str, symbol: str, title: str, plot_indi
         x_pos = marker.get('x_pos', df.index[0])
         annotations.append(dict(x=x_pos, y=y_pos, text=marker['text'], ay=-10, showarrow=False, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)))    
     
-    if premarket_activity:
-        # TODO: RTH start/end markers y0 should bet LOD not low of chart and same for highs
-        shapes.append(dict(x0=pd.Timestamp(f"{df.index[0].date()} 09:30"), x1=pd.Timestamp(f"{df.index[0].date()} 09:30"), y0=df['Low'].min(), y1=df['High'].max(), line_dash='dot', opacity=0.5))        
+    if add_rth_markers:        
+        #TODO: assuming M15
+        a = f"{df.index[0].date()} 09:30"
+        b = f"{df.index[0].date()} 15:45"
+        y0 = df.loc[a:b]['Low'].min()
+        y1 = df.loc[a:b]['High'].max()
+        shapes.append(dict(x0=pd.Timestamp(a), x1=pd.Timestamp(a), y0=y0, y1=y1, line_dash='dot', opacity=0.5))        
         if tf == '15min':
-            shapes.append(dict(x0=pd.Timestamp(f"{df.index[0].date()} 15:45"), x1=pd.Timestamp(f"{df.index[0].date()} 15:45"), y0=df['Low'].min(), y1=df['High'].max(), line_dash='dot', opacity=0.5))  
+            shapes.append(dict(x0=pd.Timestamp(b), x1=pd.Timestamp(b), y0=y0, y1=y1.max(), line_dash='dot', opacity=0.5))  
     
     if levels is not None:        
         if levels['yday_mid']:

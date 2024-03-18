@@ -85,7 +85,7 @@ def handle_sip(config: SipConfig):
                     chart_df = utils_ta.add_ta(sym, chart_df, ['VWAP'], separate_by_day=True)
                     fig = plots.intraday_chart(chart_df, tf, sym, title=f"{sym} {date} ({tf})",
                                                 #plot_indicators={key: ta_params[key] for key in ['EMA10', 'EMA20', 'EMA50', 'VWAP']}, #TODO handle ta_params
-                                                marker={'text': f"SIP Start {date}"})
+                                                marker={'text': f"SIP Start {date.strftime('%Y-%m-%d')}"})
                     utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", 1600, 900)
                 if config.gen_daily:
                     daily_days_before = 100
