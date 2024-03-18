@@ -11,7 +11,7 @@ def write_chart(df, timeframe, outdir):
     symbol = df.attrs['symbol']
     print(f"Creating chart {symbol}: {df.index[0]} - {df.index[-1]}")    
     date = df.index[0]    
-    fig  = plots.generate_chart(df, timeframe, symbol, title=f"{symbol} {date} ({timeframe})")
+    fig  = plots.intraday_chart(df, timeframe, symbol, title=f"{symbol} {date} ({timeframe})")
     filepath =  f"{outdir}/{symbol}-{date.strftime('%Y-%m-%d')}-{timeframe}" if outdir else f"{symbol}-{date.strftime('%Y-%m-%d')}-{timeframe}" 
     utils.write_file(fig, filepath, 'png', 1600, 900)
 
@@ -87,7 +87,7 @@ def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end
         utils_ta.vwap(today)
         utils_ta.mid(today)
 
-        fig = plots.generate_chart(
+        fig = plots.intraday_chart(
             today,
             timeframe,
             symbol,

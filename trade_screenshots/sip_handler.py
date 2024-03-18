@@ -79,9 +79,9 @@ def handle_sip(config: SipConfig):
                     else:
                         chart_df = utils_ta.add_ta(sym, chart_df, ['EMA10', 'EMA20', 'EMA50'])
                     chart_df = utils_ta.add_ta(sym, chart_df, ['VWAP'], separate_by_day=True)
-                    fig = plots.generate_chart(chart_df, tf, sym, title=f"{sym} {date} ({tf})",
+                    fig = plots.intraday_chart(chart_df, tf, sym, title=f"{sym} {date} ({tf})",
                                                 plot_indicators={key: ta_params[key] for key in ['EMA10', 'EMA20', 'EMA50', 'VWAP']},
-                                                sip_marker=date)
+                                                marker=date)
                     utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", filetype, 1600, 900)
                 if config.gen_daily:
                     daily_days_before = 100
@@ -89,7 +89,7 @@ def handle_sip(config: SipConfig):
                     start_date = date - pd.Timedelta(days=daily_days_before)
                     end_date = date + pd.Timedelta(days=daily_days_after)
                     daily_chart_df = daily_df.loc[f"{start_date}":f"{end_date}"]
-                    fig = plots.generate_daily_chart(daily_chart_df, sym, title=f"{sym} {date} (daily)", sip_marker=date)
+                    fig = plots.daily_chart(daily_chart_df, sym, title=f"{sym} {date} (daily)", sip_marker=date)
                     utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-daily", filetype, 1600, 900)
                     
         
