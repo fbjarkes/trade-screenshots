@@ -10,10 +10,11 @@ import pandas as pd
 
 @dataclass
 class SipConfig:
+    start: str
     timeframe: str
     provider: str
     symbols_file: str
-    filetype: str
+    symbol: str
     outdir: str
     transform: str    
     paths: dict
@@ -24,7 +25,10 @@ class SipConfig:
     gen_daily: bool = False
 
 def handle_sip(config: SipConfig):
-    symbol_dates = utils.parse_txt(config.symbols_file)
+    if config.symbol:
+        symbol_dates = {config.start: config.symbol}
+    else:
+        symbol_dates = utils.parse_txt(config.symbols_file)
     timeframe = config.timeframe
     provider = config.provider
     filetype = config.filetype

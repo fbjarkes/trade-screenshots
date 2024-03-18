@@ -23,10 +23,10 @@ PATHS = {'tv': '~/Bardata/tradingview', 'alpaca-file': '/Users/fbjarkes/Bardata/
 # }
 
 def main(
-    start,
+    start='',
     timeframe="15min",  # only allow '<integer>min'
     provider="alpaca-file",
-    symbols=None,    
+    symbol=None,    
     sip_file='stocks_in_play.txt',
     outdir='',    
     days_before=1,
@@ -39,7 +39,7 @@ def main(
     :param start: Stock in play date, e.g. '2023-12-06'
     :param timeframe: The timeframe for the trade screenshots. Only allows '<integer>min'. Defaults to "1min".
     :param provider: The provider for the trade data.
-    :param symbols: The symbols as comma separated string, e.g. "AAPL,TSLA,NVDA' (overrides sip_file)
+    :param symbol: The symbol, e.g. AAPL (overrides sip_file)
     :param sip_file: File containing list of dates and symbols
     :param trading_hour: The trading hour for the trade screenshots. Assumes OHLC data is in market time for symbol in question.
     :param outdir: The output directory for the generated trade screenshots.
@@ -48,10 +48,11 @@ def main(
     :param transform: Transform the original OHLC data into this timeframe
     """
 
-    if symbols:
+    if symbol:
         config = SipConfig(
+            start=start,
             timeframe=timeframe,
-            symbols_file=sip_file,
+            symbols_file=None,
             provider=provider,
             outdir=outdir,
             transform=transform,

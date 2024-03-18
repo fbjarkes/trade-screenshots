@@ -146,18 +146,22 @@ def parse_txt(filename: str) -> Dict[str, pd.Timestamp]:
     ...
     """
     symbol_map = {}
-    with open(filename) as f:
-        for line in f:
-            # if line does not contain ':':
-            if line.startswith('#') or ':' not in line:
-                continue
-            date, symbols = line.strip().split(':')
-            for symbol in symbols.split(','):
-                symbol = symbol.strip()
-                if symbol:
-                    symbol_map.setdefault(symbol, []).append(pd.to_datetime(date))
+    try:
+        with open(filename) as f:
+            for line in f:
+                # if line does not contain ':':
+                if line.startswith('#') or ':' not in line:
+                    continue
+                date, symbols = line.strip().split(':')
+                for symbol in symbols.split(','):
+                    symbol = symbol.strip()
+                    if symbol:
+                        symbol_map.setdefault(symbol, []).append(pd.to_datetime(date))
+    except FileNotFoundError:
+        raise FileNotFoundError(f'File {filename} not found')
+    except Exception as e:
+        raise RuntimeError(f'An error occurred while parsing the file: {str(e)}')
     return symbol_map
-
 
 def transform_timeframe(df: pd.DataFrame, timeframe:str, transform:str) -> pd.DataFrame:
     # TODO: only allow resample from low to high?     
