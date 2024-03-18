@@ -9,6 +9,7 @@ from finta import TA
 from typing import Any, List, Dict, Tuple, Union
 
 
+# TODO: either expose Trade type dataclass or just use basic data type or dict
 @dataclass
 class Trade:
     symbol: str

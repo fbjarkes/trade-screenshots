@@ -38,6 +38,8 @@ def handle_sip(config: SipConfig):
     paths = config.paths
     #ta_params = config.ta_params
     
+    plotter = plots.Plotter()
+    
     if transform != '':
         timeframes_to_plot = transform.split(',')
         if not all(tf in VALID_TIME_FRAMES for tf in timeframes_to_plot):
@@ -77,8 +79,11 @@ def handle_sip(config: SipConfig):
 
                 df = df.sort_index() # !?
                 chart_df = df.loc[f"{start_date}":f"{end_date}"]
-                rth_0 = df.loc[f"{start_date} 09:30":f"{start_date} 15:45"]
-                mid = (rth_0['High'].max() + rth_0['Low'].min()) / 2
+            
+                # Daily/intraday levels:                
+                # rth_0 = df.loc[f"{start_date} 09:30":f"{start_date} 15:45"]
+                # mid = (rth_0['High'].max() + rth_0['Low'].min()) / 2
+                # levels = {'today_mid': mid}
 
                 for tf in timeframes_to_plot:
                     chart_df = utils.transform_timeframe(chart_df, timeframe, tf)
@@ -87,10 +92,9 @@ def handle_sip(config: SipConfig):
                     else:
                         chart_df = utils_ta.add_ta(sym, chart_df, ['EMA10', 'EMA20', 'EMA50'])
                     chart_df = utils_ta.add_ta(sym, chart_df, ['VWAP'], separate_by_day=True)
-                    fig = plots.intraday_chart(chart_df, tf, sym, title=f"{sym} {date} ({tf})",
-                                                #plot_indicators={key: ta_params[key] for key in ['EMA10', 'EMA20', 'EMA50', 'VWAP']}, #TODO handle ta_params as class init
+                    fig = plotter.intraday_chart(chart_df, tf, sym, title=f"{sym} {date} ({tf})",                                                
                                                 marker={'text': f"SIP Start {date.strftime('%Y-%m-%d')}"},
-                                                levels={'today_mid': mid}
+                                                #levels=levels
                                                 )
                     utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", 1600, 900)
                 
@@ -100,7 +104,7 @@ def handle_sip(config: SipConfig):
                     start_date = date - pd.Timedelta(days=daily_days_before)
                     end_date = date + pd.Timedelta(days=daily_days_after)
                     daily_chart_df = daily_df.loc[f"{start_date}":f"{end_date}"]
-                    fig = plots.daily_chart(daily_chart_df, sym, title=f"{sym} {date} (daily)", sip_marker=date)
+                    fig = plotter.daily_chart(daily_chart_df, sym, title=f"{sym} {date} (daily)", sip_marker=date)
                     utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-daily", 1600, 900)
                     
         
