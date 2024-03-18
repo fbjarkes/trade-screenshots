@@ -1,12 +1,27 @@
 from functools import partial
+from typing import Optional
 import functools
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 import pandas as pd
 import trade_screenshots.utils_ta as utils_ta
-
 #TODO: need separate generate chart functions?
 
+
+def create_trade_chart(trade, df, indicators):
+    """
+    Create chart with dates based on trade data and add buy/sell markers
+    """
+    ...
+    
+def create_chart(df, title, indicators):
+    """
+    Create chart with dates based on df
+    """
+    ...
+
+
+# TODO: either expose Trade type dataclass or just use basict data typer or dict
 def generate_trade_chart(trade, df, tf, title, plot_indicators, config):
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01, row_heights=[0.8, 0.2])
 
@@ -54,7 +69,8 @@ def generate_trade_chart(trade, df, tf, title, plot_indicators, config):
 
     return fig
 
-def generate_daily_chart(df, symbol, title, sip_marker=None):
+#TODO: add with dates as strings and df: generate_daily_chart(df, '2023-01-01', '2023-12-31')
+def generate_daily_chart(df: pd.DataFrame, symbol: str, title:str, sip_marker: Optional[pd.Timestamp] = None, sip_marker_text='SIP start'):
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01, row_heights=[0.8, 0.2])
     candlestick = go.Candlestick(
         x=df.index,
@@ -73,9 +89,8 @@ def generate_daily_chart(df, symbol, title, sip_marker=None):
     if sip_marker is not None:
         # remove hours/min from pd.datetime
         marker_day = pd.to_datetime(sip_marker.date())
-        print(marker_day)        
         y_pos = df['Low'].min() + 1.5 * ((df['Close'][marker_day] - df['Low'].min()) / 2)          
-        annotations.append(dict(x=marker_day, y=y_pos, text=f"SIP start", ay=100, showarrow=True, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)))    
+        annotations.append(dict(x=marker_day, y=y_pos, text=sip_marker_text, ay=100, showarrow=True, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)))    
     
     if annotations:
         fig.update_layout(annotations=annotations)
@@ -90,7 +105,10 @@ def generate_daily_chart(df, symbol, title, sip_marker=None):
     
     return fig
 
-def generate_chart(df, tf, symbol, title, plot_indicators=None, or_times=None, daily_levels=None, sip_marker=None):
+# TODO: generate_intraday_chart() and markers dict
+def generate_chart(df, tf, symbol, title, plot_indicators=None, or_times=None, daily_levels=None, sip_marker=None, mid_levels=False):
+    premarket_activity = df.index[0].time() < pd.Timestamp(f"{df.index[0].date()} 09:30").time()
+    
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01, row_heights=[0.8, 0.2])
 
     candlestick = go.Candlestick(
@@ -99,7 +117,7 @@ def generate_chart(df, tf, symbol, title, plot_indicators=None, or_times=None, d
         high=df['High'],
         low=df['Low'],
         close=df['Close'],
-        name=symbol,
+        name=symbol, # TODO: needed?
     )
     volume = go.Bar(x=df.index, y=df['Volume'], name='Volume', marker=dict(color='blue'))
 
@@ -124,6 +142,17 @@ def generate_chart(df, tf, symbol, title, plot_indicators=None, or_times=None, d
     
     if sip_marker is not None:                
         annotations.append(dict(x=sip_marker, y=df['Low'].min(), text=f"SIP start", ay=-10, showarrow=False, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)))    
+    
+    if premarket_activity:
+        # TODO: RTH start/end markers y0 should bet LOD not low of chart and same for highs
+        shapes.append(dict(x0=pd.Timestamp(f"{df.index[0].date()} 09:30"), x1=pd.Timestamp(f"{df.index[0].date()} 09:30"), y0=df['Low'].min(), y1=df['High'].max(), line_dash='dot', opacity=0.5))        
+        if tf == '15min':
+            shapes.append(dict(x0=pd.Timestamp(f"{df.index[0].date()} 15:45"), x1=pd.Timestamp(f"{df.index[0].date()} 15:45"), y0=df['Low'].min(), y1=df['High'].max(), line_dash='dot', opacity=0.5))  
+    
+    if mid_levels is not None:
+        # yesterday mid, assuming M15
+        shapes.append(dict(x0=df.index[0], x1=df.index[25], y0=mid_levels['yday_mid'], y1=mid_levels['yday_mid'], line_dash='longdash', line_color='blue', opacity=0.3))
+        shapes.append(dict(x0=df.index[26], x1=df.index[52], y0=mid_levels['today_mid'], y1=mid_levels['today_mid'], line_dash='longdash', line_color='blue', opacity=0.3))
     
     if or_times:
         lowest, highest = utils_ta.or_levels(df, or_times)
@@ -158,7 +187,10 @@ def generate_chart(df, tf, symbol, title, plot_indicators=None, or_times=None, d
     
     dt_all = pd.date_range(start=df.index[0], end=df.index[-1], freq=tf)
     dt_breaks = [d for d in dt_all.strftime("%Y-%m-%d %H:%M:%S").tolist() if not d in df.index]
-    minutes = int(tf[:-3]) # TODO: handle other than 'min'?
+    if 'min' in tf:
+        minutes = int(tf[:-3]) # TODO: handle other than 'min'?
+    else:
+        minutes = 24 * 60 
     fig.update_xaxes(rangebreaks=[dict(dvalue=minutes * 60 * 1000, values=dt_breaks)])
     
     return fig
