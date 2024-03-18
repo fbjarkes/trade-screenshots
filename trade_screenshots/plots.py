@@ -70,7 +70,7 @@ def trade_chart(trade, df, tf, title, plot_indicators, config):
     return fig
 
 #TODO: add with dates as strings and df: generate_daily_chart(df, '2023-01-01', '2023-12-31')
-def daily_chart(df: pd.DataFrame, symbol: str, title:str, sip_marker: Optional[pd.Timestamp] = None, sip_marker_text='SIP start'):
+def daily_chart(df: pd.DataFrame, symbol: str, title:str, sip_marker: Optional[pd.Timestamp] = None):
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01, row_heights=[0.8, 0.2])
     candlestick = go.Candlestick(
         x=df.index,
@@ -90,7 +90,7 @@ def daily_chart(df: pd.DataFrame, symbol: str, title:str, sip_marker: Optional[p
         # remove hours/min from pd.datetime
         marker_day = pd.to_datetime(sip_marker.date())
         y_pos = df['Low'].min() + 1.5 * ((df['Close'][marker_day] - df['Low'].min()) / 2)          
-        annotations.append(dict(x=marker_day, y=y_pos, text=sip_marker_text, ay=100, showarrow=True, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)))    
+        annotations.append(dict(x=marker_day, y=y_pos, text=f"SIP {sip_marker}", ay=100, showarrow=True, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)))    
     
     if annotations:
         fig.update_layout(annotations=annotations)
