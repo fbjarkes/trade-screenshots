@@ -103,26 +103,17 @@ def split(df: pd.DataFrame, start_time: str, end_time: str, eth_values: Dict[str
     return dfs
 
 
-def write_file(fig: Any, filename: str, type: str, width: int, height: int) -> None:
+def write_file(fig: Any, filename: str, type: str, width: int, height: int, verbose=0) -> None:
     dirs = filename.split('/')
     if len(dirs) > 1:
         dir_path = '/'.join(dirs[:-1])
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
-    if type == "html":
-        fig.write_html(f"{filename}.html")
-        print(f"Wrote '{filename}.html'")
-    elif type == "png":
-        pio.write_image(fig, f"{filename}.png", width=width, height=height)
+   
+    pio.write_image(fig, f"{filename}.png", width=width, height=height)
+    if verbose > 0:
         print(f"Wrote '{filename}.png'")
-    elif type == 'webp':
-        pio.write_image(fig, f"{filename}.webp")
-        print(f"Wrote '{filename}.webp'")
-    elif type == 'svg':
-        pio.write_image(fig, f"{filename}.svg")
-        print(f"Wrote '{filename}.svg'")
-    else:
-        raise ValueError("Unsupported file type:", type)
+
 
 def get_plot_dates_weekend_adjusted(date: pd.Timestamp, days_before: int, days_after: int) -> Tuple[pd.Timestamp, pd.Timestamp]:
     if days_before == 0:
