@@ -48,6 +48,7 @@ def main(
             provider=provider,
             outdir=outdir,
             transform=transform,
+            rth_only=False,
             days_before=days_before,
             days_after=days_after,
             paths=PATHS,
@@ -63,10 +64,11 @@ def main(
             provider=provider,
             outdir=outdir,
             transform=transform,
+            rth_only=False,
             days_before=days_before,
             days_after=days_after,
             paths=PATHS,
-            gen_daily=daily_plot
+            gen_daily=daily_plot            
         )
         handle_sip(config)
     else:

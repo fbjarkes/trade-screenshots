@@ -19,7 +19,8 @@ class SipConfig:
     symbols_file: str
     symbol: str
     outdir: str
-    transform: str    
+    transform: str
+    rth_only: bool    
     paths: dict
     days_before: int = 3
     days_after: int = 0    
@@ -70,7 +71,7 @@ def handle_sip(config: SipConfig):
             first_date = dates_sorted[0] - pd.Timedelta(days=days_before)
             last_date = dates_sorted[-1] + pd.Timedelta(days=days_after)
 
-            #print(f"{sym}: getting df ({timeframe}) from='{first_date}', to='{last_date}'")
+            # TODO: rth_only...
             if provider == 'tv':
                 df = utils.get_dataframe_tv(first_date, timeframe, sym, paths['tv'])
                 if config.gen_daily:
