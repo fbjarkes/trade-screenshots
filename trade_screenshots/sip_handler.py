@@ -66,64 +66,71 @@ def handle_sip(config: SipConfig):
     
     for sym in symbol_dates.keys():
         try:
-            daily_df = None
             dates_sorted = sorted(symbol_dates[sym])     
             first_date = dates_sorted[0] - pd.Timedelta(days=days_before)
             last_date = dates_sorted[-1] + pd.Timedelta(days=days_after)
+            
+            df, daily_df = get_dataframes(config, first_date, last_date, timeframe, provider, paths, sym)
 
-            # TODO: rth_only...
-            if provider == 'tv':
-                df = utils.get_dataframe_tv(first_date, timeframe, sym, paths['tv'])
-                if config.gen_daily:
-                    daily_df = utils.get_dataframe_tv(first_date, 'day', sym, paths['tv'])
-            else:
-                df = utils.get_dataframe_alpaca(sym, timeframe, paths['alpaca-file'])
-                if config.gen_daily:
-                    daily_df = utils.get_dataframe_alpaca(sym, 'day', paths['alpaca-file'])
-            print(f"{sym}: df start='{df.index[0]}' end='{df.index[-1]}'")
-            if config.gen_daily:
-                print(f"{sym}: daily_df start='{daily_df.index[0]}' end='{daily_df.index[-1]}'")
-
-                
-            if first_date < df.index[0] or last_date > df.index[-1]:
-                raise ValueError(f"{sym}: Missing data for {first_date} - {last_date} ({timeframe}) (df={df.index[0]} - {df.index[-1]})")
-
-            # 3. plot chart for each date, including ah/pm,
             for date in dates_sorted:
-                # TODO: parallelize this loop:                
+                # TODO: parallelize this loop              
                 start_date, end_date = utils.get_plot_dates_weekend_adjusted(date, days_before, days_after)
                 print(f"{sym}: creating intraday chart '{start_date}' to '{end_date}', for SIP date='{date}' ({weekday_to_string(date.weekday())})")
 
                 df = df.sort_index() # !?
                 chart_df = df.loc[f"{start_date}":f"{end_date}"]
                 
-                chart_df = add_ta(sym, chart_df, ta_indicators, rth_only_ta=True)
-            
+                chart_df = add_ta(sym, chart_df, ta_indicators)
+                
                 # Daily/intraday levels:                
                 # rth_0 = df.loc[f"{start_date} 09:30":f"{start_date} 15:45"]
                 # mid = (rth_0['High'].max() + rth_0['Low'].min()) / 2
-                # levels = {'today_mid': mid}
-
+                # levels = {'today_mid': mid}            
+        
                 for tf in timeframes_to_plot:
-                    chart_df = utils.transform_timeframe(chart_df, timeframe, tf)                    
-                    fig = plotter.intraday_chart(chart_df, tf, sym, title=f"{sym} {date} ({tf})",                                                
+                    create_intraday_chart(timeframe, outdir, ta_indicators, plotter, sym, date, chart_df, tf)                
+                if config.gen_daily:
+                    create_daily_chart(outdir, plotter, sym, daily_df, date)
+                    
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            print(f"{sym}: {e}. Skipping.") 
+
+def create_intraday_chart(timeframe, outdir, ta_indicators, plotter, sym, date, chart_df, tf):
+    chart_df = utils.transform_timeframe(chart_df, timeframe, tf)                    
+    fig = plotter.intraday_chart(chart_df, tf, sym, title=f"{sym} {date} ({tf})",                                                
                                                 marker={'text': f"SIP Start {date.strftime('%Y-%m-%d')}"},
                                                 #levels=levels
                                                 ta_indicators=ta_indicators
                                                 )
-                    utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", 1600, 900)
+    utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", 1600, 900)
+
+def create_daily_chart(outdir, plotter, sym, daily_df, date):
+    daily_days_before = 100
+    daily_days_after = 20
+    start_date = date - pd.Timedelta(days=daily_days_before)
+    end_date = date + pd.Timedelta(days=daily_days_after)
+    daily_chart_df = daily_df.loc[f"{start_date}":f"{end_date}"]
+    fig = plotter.daily_chart(daily_chart_df, sym, title=f"{sym} {date} (daily)", sip_marker=date)
+    utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-daily", 1600, 900)
+
+def get_dataframes(config, first_date, last_date, timeframe, provider, paths, sym):
+    daily_df = None
+    # TODO: config.rth_only
+    if provider == 'tv':
+        df = utils.get_dataframe_tv(first_date, timeframe, sym, paths['tv'])
+        if config.gen_daily:
+            daily_df = utils.get_dataframe_tv(first_date, 'day', sym, paths['tv'])
+    else:
+        df = utils.get_dataframe_alpaca(sym, timeframe, paths['alpaca-file'])
+        if config.gen_daily:
+            daily_df = utils.get_dataframe_alpaca(sym, 'day', paths['alpaca-file'])
+    print(f"{sym}: df start='{df.index[0]}' end='{df.index[-1]}'")
+    if config.gen_daily:
+        print(f"{sym}: daily_df start='{daily_df.index[0]}' end='{daily_df.index[-1]}'")
                 
-                if config.gen_daily:
-                    daily_days_before = 100
-                    daily_days_after = 20
-                    start_date = date - pd.Timedelta(days=daily_days_before)
-                    end_date = date + pd.Timedelta(days=daily_days_after)
-                    daily_chart_df = daily_df.loc[f"{start_date}":f"{end_date}"]
-                    fig = plotter.daily_chart(daily_chart_df, sym, title=f"{sym} {date} (daily)", sip_marker=date)
-                    utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-daily", 1600, 900)
-                    
-        
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            print(f"{sym}: {e}. Skipping.")            
+    if first_date < df.index[0] or last_date > df.index[-1]:
+        raise ValueError(f"{sym}: Missing data for {first_date} - {last_date} ({timeframe}) (df={df.index[0]} - {df.index[-1]})")
+    
+    return df, daily_df
