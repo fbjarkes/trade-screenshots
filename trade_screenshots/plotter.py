@@ -24,20 +24,20 @@ class Plotter:
     def __init__(self, plot_config: Optional[Dict[str, Any]] = None, init_ta=False):
         self.init_ta = init_ta
         #TODO: more robust config stuff..             
-        self.plot_config = plot_config if plot_config else {}
-        
+        self.plot_config = plot_config if plot_config else {}        
         if 'ta_config' not in self.plot_config:         
             self.plot_config['ta_config'] = TA_PARAMS
                     
-    
+    # TODO: sip_start_marker and levels dicts documentation?
+    # sip_start_marker: {'text': <str>, 'x_pos': <pd.TimeStamp>, 'y_pos': <float>}
+    # levels: {'yday_mid': <float>, 'today_mid': <float>, ...}
     def intraday_chart(self, df: pd.DataFrame, tf: str, symbol: str, title: str, 
-                       marker: Optional[Dict[str, Any]] = None, 
+                       sip_start_marker: Optional[Dict[str, Any]] = None, 
                        levels: Optional[Dict[str, Any]] = None,
                        ta_indicators: Optional[List[str]] = None): 
         add_rth_markers = df.index[0].time() < pd.Timestamp(f"{df.index[0].date()} 09:30").time()
     
         fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01, row_heights=[0.8, 0.2])
-
         candlestick = go.Candlestick(
             x=df.index,
             open=df['Open'],
@@ -67,10 +67,10 @@ class Plotter:
         shapes = []
         annotations = []
         
-        if marker is not None:
-            y_pos = marker.get('y_pos', df['Low'].min())
-            x_pos = marker.get('x_pos', df.index[0])
-            annotations.append(dict(x=x_pos, y=y_pos, text=marker['text'], ay=-10, showarrow=False, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)))    
+        if sip_start_marker is not None:
+            y_pos = sip_start_marker.get('y_pos', df['Low'].min())
+            x_pos = sip_start_marker.get('x_pos', df.index[0])
+            annotations.append(dict(x=x_pos, y=y_pos, text=sip_start_marker['text'], ay=-10, showarrow=False, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)))    
         
         if add_rth_markers:        
             #TODO: assuming M15

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import List
-import trade_screenshots.plots as plots
+import trade_screenshots.plotter as plotter
 import trade_screenshots.utils as utils
 from trade_screenshots import utils_ta
 from trade_screenshots.common import VALID_TIME_FRAMES, weekday_to_string
@@ -40,7 +40,7 @@ def add_ta(sym, df, indicators, rth_only_ta=False):
             df = utils_ta.add_ta(sym, df, ['VWAP'], separate_by_day=True)
     return df
         
-
+# TODO StocksInPlay class
 def handle_sip(config: SipConfig):
     if config.symbol:
         symbol_dates = {config.symbol: [pd.Timestamp(config.start)]}
@@ -55,7 +55,7 @@ def handle_sip(config: SipConfig):
     paths = config.paths
     ta_indicators = config.ta_indicators
     
-    plotter = plots.Plotter(init_ta=False)
+    plotter = plotter.Plotter(init_ta=False)
     
     if transform != '':
         timeframes_to_plot = transform.split(',')
