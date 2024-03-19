@@ -10,17 +10,6 @@ from trade_screenshots.trades_handler import handle_trades
 
 PATHS = {'tv': '~/Bardata/tradingview', 'alpaca-file': '/Users/fbjarkes/Bardata/alpaca-v2', 'alpaca-file-2016': '/Users/fbjarkes/Bardata/alpaca-v2/2016-2023'}
 
-# TA_PARAMS = {
-#     'VWAP': {'color': 'yellow'},
-#     'EMA10': {'color': 'lightblue'},
-#     'EMA20': {'color': 'blue'},
-#     'EMA50': {'color': 'darkblue'},
-#     'BB_UPPER': {'color': 'lightgrey'},
-#     'BB_LOWER': {'color': 'lightgrey'},
-#     'Mid': {'color': 'red'},
-#     'DAILY_LEVEL': {'days': 1},
-#     'Jlines': {'color': 'green'}
-# }
 
 def main(
     #start='',    
@@ -62,7 +51,8 @@ def main(
             days_before=days_before,
             days_after=days_after,
             paths=PATHS,
-            gen_daily=daily_plot
+            gen_daily=daily_plot,
+            ta_indicators=['EMA10', 'VWAP']
         )
         handle_sip(config)
     elif sip_file:

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 import trade_screenshots.plots as plots
 import trade_screenshots.utils as utils
 from trade_screenshots import utils_ta
@@ -7,6 +8,8 @@ from trade_screenshots.common import VALID_TIME_FRAMES, weekday_to_string
 
 import pandas as pd
 
+
+VALID_TA =  ['EMA10', 'EMA20', 'EMA50', 'VWAP']
 
 @dataclass
 class SipConfig:
@@ -18,11 +21,24 @@ class SipConfig:
     outdir: str
     transform: str    
     paths: dict
-    #ta_params: dict
     days_before: int = 3
-    days_after: int = 0
-    rth_ta: bool = True
-    gen_daily: bool = False
+    days_after: int = 0    
+    gen_daily: bool = False    
+    ta_indicators: List[str] = None
+    #rth_ta: bool = True
+
+def add_ta(sym, df, indicators, rth_only_ta=False):
+    if not indicators:
+        return df
+    
+    if rth_only_ta:
+        df = utils_ta.add_ta(sym, df, indicators, start_time='09:30', end_time='16:00')
+    else:
+        df = utils_ta.add_ta(sym, df, indicators)
+        if 'VWAP' in indicators:
+            df = utils_ta.add_ta(sym, df, ['VWAP'], separate_by_day=True)
+    return df
+        
 
 def handle_sip(config: SipConfig):
     if config.symbol:
@@ -36,9 +52,9 @@ def handle_sip(config: SipConfig):
     days_before = config.days_before
     days_after = config.days_after
     paths = config.paths
-    #ta_params = config.ta_params
+    ta_indicators = config.ta_indicators
     
-    plotter = plots.Plotter()
+    plotter = plots.Plotter(init_ta=False)
     
     if transform != '':
         timeframes_to_plot = transform.split(',')
@@ -79,6 +95,8 @@ def handle_sip(config: SipConfig):
 
                 df = df.sort_index() # !?
                 chart_df = df.loc[f"{start_date}":f"{end_date}"]
+                
+                chart_df = add_ta(sym, chart_df, ta_indicators, rth_only_ta=True)
             
                 # Daily/intraday levels:                
                 # rth_0 = df.loc[f"{start_date} 09:30":f"{start_date} 15:45"]
@@ -86,15 +104,11 @@ def handle_sip(config: SipConfig):
                 # levels = {'today_mid': mid}
 
                 for tf in timeframes_to_plot:
-                    chart_df = utils.transform_timeframe(chart_df, timeframe, tf)
-                    if config.rth_ta:                    
-                        chart_df = utils_ta.add_ta(sym, chart_df, ['EMA10', 'EMA20', 'EMA50'], start_time='09:30', end_time='16:00')
-                    else:
-                        chart_df = utils_ta.add_ta(sym, chart_df, ['EMA10', 'EMA20', 'EMA50'])
-                    chart_df = utils_ta.add_ta(sym, chart_df, ['VWAP'], separate_by_day=True)
+                    chart_df = utils.transform_timeframe(chart_df, timeframe, tf)                    
                     fig = plotter.intraday_chart(chart_df, tf, sym, title=f"{sym} {date} ({tf})",                                                
                                                 marker={'text': f"SIP Start {date.strftime('%Y-%m-%d')}"},
                                                 #levels=levels
+                                                ta_indicators=ta_indicators
                                                 )
                     utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", 1600, 900)
                 

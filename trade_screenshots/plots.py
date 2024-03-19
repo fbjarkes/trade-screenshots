@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 import functools
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
@@ -7,12 +7,33 @@ import pandas as pd
 import trade_screenshots.utils_ta as utils_ta
 
 
+TA_PARAMS = {
+    'VWAP': {'color': 'yellow'},
+    'EMA10': {'color': 'lightblue'},
+    'EMA20': {'color': 'blue'},
+    'EMA50': {'color': 'darkblue'},
+    'BB_UPPER': {'color': 'lightgrey'},
+    'BB_LOWER': {'color': 'lightgrey'},
+    'Mid': {'color': 'red'},
+    'DAILY_LEVEL': {'days': 1},
+    'Jlines': {'color': 'green'}
+}
+
 class Plotter:
     
-    def __init__(self, plot_indicators: Optional[Dict[str, Any]] = None):
-        self.plot_indicators = plot_indicators
+    def __init__(self, plot_config: Optional[Dict[str, Any]] = None, init_ta=False):
+        self.init_ta = init_ta
+        #TODO: more robust config stuff..             
+        self.plot_config = plot_config if plot_config else {}
+        
+        if 'ta_config' not in self.plot_config:         
+            self.plot_config['ta_config'] = TA_PARAMS
+                    
     
-    def intraday_chart(self, df: pd.DataFrame, tf: str, symbol: str, title: str, marker: Optional[Dict[str, Any]] = None, levels: Optional[Dict[str, Any]] = None): 
+    def intraday_chart(self, df: pd.DataFrame, tf: str, symbol: str, title: str, 
+                       marker: Optional[Dict[str, Any]] = None, 
+                       levels: Optional[Dict[str, Any]] = None,
+                       ta_indicators: Optional[List[str]] = None): 
         add_rth_markers = df.index[0].time() < pd.Timestamp(f"{df.index[0].date()} 09:30").time()
     
         fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01, row_heights=[0.8, 0.2])
@@ -26,23 +47,23 @@ class Plotter:
             name=symbol, # TODO: needed?
         )
         volume = go.Bar(x=df.index, y=df['Volume'], name='Volume', marker=dict(color='blue'))
-
-        ta_lines = []
-        if self.plot_indicators:
-            for ta in self.plot_indicators.keys():
-                line = go.Scatter(
-                    x=df.index,
-                    y=df[ta],
-                    name=ta,
-                    line=dict(color=self.plot_indicators[ta]['color']),
-                )
-                ta_lines.append(line)
-
         fig.add_trace(candlestick, row=1, col=1)
-        for line in ta_lines:
-            fig.add_trace(line, row=1, col=1)
         fig.add_trace(volume, row=2, col=1)
-
+        
+        if ta_indicators:
+            for ta in ta_indicators: 
+                if ta in df.columns:
+                    color = self.plot_config['ta_config'].get(ta, {}).get('color', 'black')
+                    line = go.Scatter(
+                        x=df.index,
+                        y=df[ta],
+                        name=ta,
+                        line=dict(color=color),
+                    )
+                    fig.add_trace(line, row=1, col=1)
+                else:
+                    print(f"Indicator {ta} not found in df (columns={df.columns})")
+        
         shapes = []
         annotations = []
         
