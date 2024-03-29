@@ -10,20 +10,6 @@ from trade_screenshots.trades_handler import handle_trades
 
 PATHS = {'tv': '~/Bardata/tradingview', 'alpaca-file': '/Users/fbjarkes/Bardata/alpaca-v2', 'alpaca-file-2016': '/Users/fbjarkes/Bardata/alpaca-v2/2016-2023'}
 
-TA_PARAMS = {
-    'VWAP': {'color': 'yellow'},
-    'EMA10': {'color': 'lightblue'},
-    'EMA20': {'color': 'blue'},
-    'EMA50': {'color': 'darkblue'},
-    'BB_UPPER': {'color': 'lightgrey'},
-    'BB_LOWER': {'color': 'lightgrey'},
-    'Mid': {'color': 'red'},
-    'DAILY_LEVEL': {'days': 1},
-    'Jlines': {'color': 'green'}
-}
-
-# PATH/PLTR/DASH: 2023-05-09 04:00:00 - 2023-05-12 06:00:00
-
 def main(
     start="2023-01-01",  # TODO: start date needed?
     end='',
@@ -64,27 +50,14 @@ def main(
     
     if symbols:
         if end:
+            # TODO: update to user Plotter etc similar to SIP handler
             create_charts(symbols, start, end, timeframe, provider, outdir, bardata_path)
         else:
-            create_charts_day_by_day(start, end, timeframe, provider, symbols, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)
+            # TODO: update to user Plotter etc similar to SIP handler
+            create_charts_day_by_day(start, end, timeframe, provider, symbols, filetype, outdir, days, start_time, end_time, PATHS)
     elif trades_file:
-        handle_trades(start, timeframe, transform, provider, trades_file, filetype, outdir, days, start_time, end_time, PATHS, TA_PARAMS)     
-    
-    elif sip_file:
-        config = SipConfig(
-            timeframe=timeframe,
-            symbols_file=sip_file,
-            provider=provider,
-            filetype=filetype,
-            outdir=outdir,
-            transform=transform,
-            days_before=3,
-            days_after=3,
-            paths=PATHS,
-            ta_params=TA_PARAMS,
-            gen_daily=True
-        )
-        handle_sip(config)
+        # TODO: update to user Plotter etc similar to SIP handler
+        handle_trades(start, timeframe, transform, provider, trades_file, filetype, outdir, days, start_time, end_time, PATHS)         
     else:
         raise ValueError("symbols, trades_file, or sip_file must be provided")
 

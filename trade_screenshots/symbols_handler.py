@@ -1,7 +1,7 @@
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
-import trade_screenshots.plots as plots
+import trade_screenshots.plotter as plotter
 import trade_screenshots.utils as utils
 from trade_screenshots import utils_ta
 from trade_screenshots.common import try_process_symbol
@@ -11,7 +11,7 @@ def write_chart(df, timeframe, outdir):
     symbol = df.attrs['symbol']
     print(f"Creating chart {symbol}: {df.index[0]} - {df.index[-1]}")    
     date = df.index[0]    
-    fig  = plots.intraday_chart(df, timeframe, symbol, title=f"{symbol} {date} ({timeframe})")
+    fig  = plotter.intraday_chart(df, timeframe, symbol, title=f"{symbol} {date} ({timeframe})")
     filepath =  f"{outdir}/{symbol}-{date.strftime('%Y-%m-%d')}-{timeframe}" if outdir else f"{symbol}-{date.strftime('%Y-%m-%d')}-{timeframe}" 
     utils.write_file(fig, filepath, 'png', 1600, 900)
 
@@ -87,7 +87,7 @@ def process_symbol(symbol, start, timeframe, provider, filetype, start_time, end
         utils_ta.vwap(today)
         utils_ta.mid(today)
 
-        fig = plots.intraday_chart(
+        fig = plotter.intraday_chart(
             today,
             timeframe,
             symbol,

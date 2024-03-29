@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import List
-import trade_screenshots.plotter as plotter
+from trade_screenshots.plotter import Plotter
 import trade_screenshots.utils as utils
 from trade_screenshots import utils_ta
 from trade_screenshots.common import VALID_TIME_FRAMES, weekday_to_string
@@ -55,8 +55,6 @@ def handle_sip(config: SipConfig):
     paths = config.paths
     ta_indicators = config.ta_indicators
     
-    plotter = plotter.Plotter(init_ta=False)
-    
     if transform != '':
         timeframes_to_plot = transform.split(',')
         if not all(tf in VALID_TIME_FRAMES for tf in timeframes_to_plot):
@@ -88,31 +86,33 @@ def handle_sip(config: SipConfig):
                 # levels = {'today_mid': mid}            
         
                 for tf in timeframes_to_plot:
-                    create_intraday_chart(timeframe, outdir, ta_indicators, plotter, sym, date, chart_df, tf)                
+                    create_intraday_chart(timeframe, outdir, ta_indicators, sym, date, chart_df, tf)                
                 if config.gen_daily:
-                    create_daily_chart(outdir, plotter, sym, daily_df, date)
+                    create_daily_chart(outdir, sym, daily_df, date)
                     
         except Exception as e:
             import traceback
             traceback.print_exc()
             print(f"{sym}: {e}. Skipping.") 
 
-def create_intraday_chart(timeframe, outdir, ta_indicators, plotter, sym, date, chart_df, tf):
-    chart_df = utils.transform_timeframe(chart_df, timeframe, tf)                    
+def create_intraday_chart(timeframe, outdir, ta_indicators, sym, date, chart_df, tf):
+    chart_df = utils.transform_timeframe(chart_df, timeframe, tf)
+    plotter = Plotter()                    
     fig = plotter.intraday_chart(chart_df, tf, sym, title=f"{sym} {date} ({tf})",                                                
-                                                marker={'text': f"SIP Start {date.strftime('%Y-%m-%d')}"},
+                                                sip_start_marker={'text': f"SIP Start {date.strftime('%Y-%m-%d')}"},
                                                 #levels=levels
                                                 ta_indicators=ta_indicators
                                                 )
     utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", 1600, 900)
 
-def create_daily_chart(outdir, plotter, sym, daily_df, date):
+def create_daily_chart(outdir, sym, daily_df, date):
+    plotter = Plotter()
     daily_days_before = 100
     daily_days_after = 20
     start_date = date - pd.Timedelta(days=daily_days_before)
     end_date = date + pd.Timedelta(days=daily_days_after)
-    daily_chart_df = daily_df.loc[f"{start_date}":f"{end_date}"]
-    fig = plotter.daily_chart(daily_chart_df, sym, title=f"{sym} {date} (daily)", sip_marker=date)
+    daily_chart_df = daily_df.loc[f"{start_date}":f"{end_date}"]    
+    fig = plotter.daily_chart(daily_chart_df, sym, title=f"{sym} {date.strftime('%Y-%m-%d')} (daily)", sip_marker=date, sip_text='')
     utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-daily", 1600, 900)
 
 def get_dataframes(config, first_date, last_date, timeframe, provider, paths, sym):
