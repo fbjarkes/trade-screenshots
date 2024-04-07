@@ -1,4 +1,4 @@
-import trade_screenshots.plotter as plotter
+from trade_screenshots.plotter import Plotter
 import trade_screenshots.utils as utils
 import trade_screenshots.utils_ta as utils_ta
 
@@ -43,7 +43,7 @@ def handle_trades(start, timeframe, transform, provider, trades_file, filetype, 
         start_date = pd.to_datetime(trade.start_dt).date() - pd.Timedelta(days=days)
         end_date = pd.to_datetime(trade.end_dt).date() + pd.Timedelta(days=days)
         df = df.loc[f"{start_date}":f"{end_date}"]        
-        fig = plotter.trade_chart(
+        fig = Plotter().trade_chart(
                 trade,
                 df,
                 tf=timeframe,
@@ -64,5 +64,5 @@ def handle_trades(start, timeframe, transform, provider, trades_file, filetype, 
             start_date = date - pd.Timedelta(days=daily_days_before)
             end_date = date + pd.Timedelta(days=daily_days_after)
             daily_chart_df = daily_df.loc[f"{start_date}":f"{end_date}"]
-            fig = plotter.daily_chart(daily_chart_df, trade.symbol, title=f"{trade.symbol} {date} (daily)", sip_marker=date)
+            fig = Plotter().daily_chart(daily_chart_df, trade.symbol, title=f"{trade.symbol} {date} (daily)", sip_marker=date)
             utils.write_file(fig, f"{outdir}/{trade.symbol}-{date_suffix}-daily", filetype, 1600, 900)
