@@ -100,7 +100,7 @@ def split(df: pd.DataFrame, start_time: str, end_time: str, eth_values: Dict[str
         ah_df = group_df.between_time(end_time, '20:00')
     return dfs
 
-
+#TODO: part of Plotter class? (not expose and utils functions from this lib?)
 def write_file(fig: Any, filename: str, width: int, height: int, verbose=0) -> None:
     dirs = filename.split('/')
     if len(dirs) > 1:

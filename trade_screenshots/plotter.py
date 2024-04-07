@@ -178,11 +178,14 @@ class Plotter:
         else:
             v_align = 100
 
+        entry_text = f"SHORT {trade.quantity}@{trade.entry_price} (val: {trade.value:.0f})" if trade.long_short is 'SHORT' else f"LONG {trade.quantity}@{trade.entry_price} ({trade.value:.0f})"
+        exit_text = f"Exit {trade.quantity}@{trade.exit_price} (pnl: {trade.pnl:.1f})"
+        #TODO: mark SL and target level?
         fig.add_annotation(
-            x=trade.start_dt, y=trade.entry_price, text=f"Entry ({trade.value:.0f})", showarrow=True, arrowhead=1, ay=v_align, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)
+            x=trade.start_dt, y=trade.entry_price, text=entry_text, showarrow=True, arrowhead=1, ay=v_align, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)
         )
         fig.add_annotation(
-            x=trade.end_dt, y=trade.exit_price, text=f"Exit ({trade.pnl:.1f})", showarrow=True, arrowhead=1, ay=v_align, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)
+            x=trade.end_dt, y=trade.exit_price, text=exit_text, showarrow=True, arrowhead=1, ay=v_align, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)
         )
 
         fig.update_layout(showlegend=False)
