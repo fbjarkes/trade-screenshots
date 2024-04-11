@@ -52,11 +52,12 @@ class Plotter:
     
     """
     def __init__(self, plot_config: Optional[Dict[str, Any]] = None, init_ta=False):
-        self.init_ta = init_ta
-        if plot_config is None:
-            plot_config = {'ta_config': {}, 'trade_bars': {}}    
-        self.plot_config['ta_config'] = {**TA_PARAMS, **self.plot_config['ta_config']}    
-        self.plot_config['trade_bars'] = {**TRADE_BARS_INCLUDED, **self.plot_config['trade_bars']}
+        self.init_ta = init_ta        
+        self.plot_config['ta_config'] = {**TA_PARAMS}    
+        self.plot_config['trade_bars'] = {**TRADE_BARS_INCLUDED}
+        if plot_config:
+            self.plot_config.update(plot_config)            
+        
                     
     # TODO: sip_start_marker and levels dicts documentation?
     # sip_start_marker: {'text': <str>, 'x_pos': <pd.TimeStamp>, 'y_pos': <float>}
