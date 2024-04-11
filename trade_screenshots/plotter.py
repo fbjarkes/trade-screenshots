@@ -189,10 +189,10 @@ class Plotter:
         exit_text = f"Exit {trade.quantity}@{trade.exit_price} (pnl: {trade.pnl:.1f})"
         #TODO: mark SL and target level?
         fig.add_annotation(
-            x=trade.start_dt, y=trade.entry_price, text=entry_text, showarrow=True, arrowhead=1, ay=v_align, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)
+            x=trade.entry_date, y=trade.entry_price, text=entry_text, showarrow=True, arrowhead=1, ay=v_align, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)
         )
         fig.add_annotation(
-            x=trade.end_dt, y=trade.exit_price, text=exit_text, showarrow=True, arrowhead=1, ay=v_align, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)
+            x=trade.exit_date, y=trade.exit_price, text=exit_text, showarrow=True, arrowhead=1, ay=v_align, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)
         )
 
         fig.update_layout(showlegend=False)
