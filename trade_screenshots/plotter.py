@@ -52,7 +52,8 @@ class Plotter:
     
     """
     def __init__(self, plot_config: Optional[Dict[str, Any]] = None, init_ta=False):
-        self.init_ta = init_ta        
+        self.init_ta = init_ta
+        self.plot_config = {} 
         self.plot_config['ta_config'] = {**TA_PARAMS}    
         self.plot_config['trade_bars'] = {**TRADE_BARS_INCLUDED}
         if plot_config:
