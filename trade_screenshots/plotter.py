@@ -20,13 +20,18 @@ TA_PARAMS = {
 }
 
 class Plotter:
+    """
+    plot_config example:
+    {'ta_config': 
+        {'EMA200': {'color': 'blue'}},
+        {'BB_UPPER': {'color': 'lightgrey'}},
+        {'BB_LOWER': {'color': 'lightgrey'}}
+    }
+    """
     
     def __init__(self, plot_config: Optional[Dict[str, Any]] = None, init_ta=False):
-        self.init_ta = init_ta
-        #TODO: more robust config stuff..             
-        self.plot_config = plot_config if plot_config else {}        
-        if 'ta_config' not in self.plot_config:         
-            self.plot_config['ta_config'] = TA_PARAMS
+        self.init_ta = init_ta    
+        self.plot_config = plot_config if plot_config else {}
                     
     # TODO: sip_start_marker and levels dicts documentation?
     # sip_start_marker: {'text': <str>, 'x_pos': <pd.TimeStamp>, 'y_pos': <float>}
@@ -152,7 +157,7 @@ class Plotter:
         return fig
 
     
-    def trade_chart(self, trade, df, tf, title, plot_indicators, config):
+    def trade_chart(self, trade, df, tf, title, plot_indicators):
         fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01, row_heights=[0.8, 0.2])
 
         candlestick = go.Candlestick(x=df.index, open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'], name=trade.symbol)
@@ -164,7 +169,7 @@ class Plotter:
                 x=df.index,
                 y=df[ta],
                 name=ta,
-                line=dict(color=config[ta]['color']),
+                line=dict(color=self.plot_config['ta_config'].get(ta, {}).get('color', 'black')),
             )
             ta_lines.append(line)
 
