@@ -1,4 +1,5 @@
 from functools import partial
+import logging
 from typing import Any, Dict, List, Optional
 import functools
 import plotly.graph_objs as go
@@ -19,21 +20,43 @@ TA_PARAMS = {
     'Jlines': {'color': 'green'}
 }
 
+TRADE_BARS_INCLUDED = {
+    'month': (500, 200),
+    'week': (250, 40),
+    'day': (200, 20),
+    '60min': (60, 20),
+    '30min': (15, 5),
+    '15min': (10,3),
+    '5min': (3, 2),
+    '3min': (1,1),
+    '2min': (1,1),
+    '1min': (1,0)
+}
+
+logger = logging.getLogger(__name__)
+
+
 class Plotter:
     """
     plot_config example:
-    {'ta_config': 
-        {'EMA200': {'color': 'blue'}},
-        {'BB_UPPER': {'color': 'lightgrey'}},
-        {'BB_LOWER': {'color': 'lightgrey'}}
+    {
+        'ta_config': {
+            {'EMA200': {'color': 'blue'}},
+            {'BB_UPPER': {'color': 'lightgrey'}},
+            {'BB_LOWER': {'color': 'lightgrey'}}
+        },
+        'trade_bars': {
+            {'day': (50, 50)}
+        }
     }
-    """
     
+    """
     def __init__(self, plot_config: Optional[Dict[str, Any]] = None, init_ta=False):
-        self.init_ta = init_ta    
-        self.plot_config = plot_config if plot_config else {}
-        if 'ta_config' not in self.plot_config:
-            self.plot_config['ta_config'] = TA_PARAMS
+        self.init_ta = init_ta
+        if plot_config is None:
+            plot_config = {'ta_config': {}, 'trade_bars': {}}    
+        self.plot_config['ta_config'] = {**TA_PARAMS, **self.plot_config['ta_config']}    
+        self.plot_config['trade_bars'] = {**TRADE_BARS_INCLUDED, **self.plot_config['trade_bars']}
                     
     # TODO: sip_start_marker and levels dicts documentation?
     # sip_start_marker: {'text': <str>, 'x_pos': <pd.TimeStamp>, 'y_pos': <float>}
@@ -160,16 +183,30 @@ class Plotter:
 
     
     def trade_chart(self, trade, df, tf, title, plot_indicators):
+        days_before = self.plot_config['trade_bars'].get(tf, (100, 100))[0]
+        days_after = self.plot_config['trade_bars'].get(tf, (100, 100))[1]
+        if df.attrs['timeframe'] == 'day':
+            plot_start_dt = pd.Timestamp(trade.entry_date.date() - pd.Timedelta(days=days_before))
+            plot_end_dt = pd.Timestamp(trade.exit_date.date() + pd.Timedelta(days=days_after))
+            plot_df = df.loc[plot_start_dt.strftime('%Y-%m-%d'):plot_end_dt.strftime('%Y-%m-%d')]
+        else:    
+            plot_start_dt = trade.entry_date - pd.Timedelta(days=days_before)
+            plot_end_dt = pd.Timestamp(trade.exit_date.strftime('%Y-%m-%d 16:00:00')) if days_after == 0 else trade.exit_date + pd.Timedelta(days=days_after) 
+            plot_df = df.loc[plot_start_dt:plot_end_dt]
+        
+        if plot_df.empty:
+            logger.debug(f"df empty for {trade.symbol} {trade.entry_date} - {trade.exit_date}")
+            # TODO: return None here?
+        
         fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01, row_heights=[0.8, 0.2])
-
-        candlestick = go.Candlestick(x=df.index, open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'], name=trade.symbol)
-        volume = go.Bar(x=df.index, y=df['Volume'], name='Volume', marker=dict(color='blue'))
+        candlestick = go.Candlestick(x=plot_df.index, open=plot_df['Open'], high=plot_df['High'], low=plot_df['Low'], close=plot_df['Close'], name=trade.symbol)
+        volume = go.Bar(x=plot_df.index, y=plot_df['Volume'], name='Volume', marker=dict(color='blue'))
 
         ta_lines = []
         for ta in plot_indicators:
             line = go.Scatter(
-                x=df.index,
-                y=df[ta],
+                x=plot_df.index,
+                y=plot_df[ta],
                 name=ta,
                 line=dict(color=self.plot_config['ta_config'].get(ta, {}).get('color', 'black')),
             )
@@ -201,8 +238,8 @@ class Plotter:
         # fig.update_layout(xaxis_type='date', xaxis=dict(dtick=180*60*1000))
         #TODO: fix range breaks for higher timeframes
         if tf not in ['week', 'month', 'day']:
-            dt_all = pd.date_range(start=df.index[0], end=df.index[-1], freq='1D' if tf == 'day' else tf)
-            dt_breaks = [d for d in dt_all.strftime("%Y-%m-%d %H:%M:%S").tolist() if not d in df.index]
+            dt_all = pd.date_range(start=plot_df.index[0], end=plot_df.index[-1], freq='1D' if tf == 'day' else tf)
+            dt_breaks = [d for d in dt_all.strftime("%Y-%m-%d %H:%M:%S").tolist() if not d in plot_df.index]
             # dt_breaks = pd.to_datetime(['2023-09-29 17:00:00', '2023-09-29 20:00:00', '2023-09-29 23:00:00', '2023-09-30 02:00:00', '2023-09-30 05:00:00',
             #                            '2023-09-30 08:00:00', '2023-09-30 11:00:00', '2023-09-30 14:00:00', '2023-09-30 17:00:00', '2023-09-30 20:00:00',
             #                            '2023-09-30 23:00:00', '2023-10-01 02:00:00', '2023-10-01 05:00:00', '2023-10-01 08:00:00', '2023-10-01 11:00:00', '2023-10-01 14:00:00'])
