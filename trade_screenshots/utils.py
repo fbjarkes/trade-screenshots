@@ -101,7 +101,7 @@ def split(df: pd.DataFrame, start_time: str, end_time: str, eth_values: Dict[str
     return dfs
 
 #TODO: part of Plotter class? (not expose and utils functions from this lib?)
-def write_file(fig: Any, filename: str, width: int, height: int, verbose=0) -> None:
+def write_file(fig: Any, filename: str, width: int, height: int, verbose=0) -> str:
     dirs = filename.split('/')
     if len(dirs) > 1:
         dir_path = '/'.join(dirs[:-1])
@@ -111,6 +111,8 @@ def write_file(fig: Any, filename: str, width: int, height: int, verbose=0) -> N
     pio.write_image(fig, f"{filename}.png", width=width, height=height)
     if verbose > 0:
         print(f"Wrote '{filename}.png'")
+    
+    return f"{filename}.png"
 
 
 def get_plot_dates_weekend_adjusted(date: pd.Timestamp, days_before: int, days_after: int) -> Tuple[pd.Timestamp, pd.Timestamp]:

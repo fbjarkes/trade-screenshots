@@ -224,7 +224,7 @@ class Plotter:
         else:
             v_align = 100
 
-        entry_text = f"SHORT {trade.quantity}@{trade.entry_price} (val: {trade.value:.0f})" if trade.long_short is 'SHORT' else f"LONG {trade.quantity}@{trade.entry_price} ({trade.value:.0f})"
+        entry_text = f"SHORT {trade.quantity}@{trade.entry_price} (val: {trade.value:.0f})" if trade.long_short == 'SHORT' else f"LONG {trade.quantity}@{trade.entry_price} ({trade.value:.0f})"
         exit_text = f"Exit {trade.quantity}@{trade.exit_price} (pnl: {trade.pnl:.1f})"
         #TODO: mark SL and target level?
         fig.add_annotation(
