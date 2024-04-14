@@ -275,7 +275,7 @@ class Plotter:
         if sip_date is not None:
             # remove hours/min from pd.datetime
             sip_date_str = f"{sip_date}"[:10]
-            y_pos = df['Low'].min() + 1.0 * ((df['Close'][sip_date_str] - df['Low'].min()) / 2)
+            y_pos = df['Low'].min() + 1.0 * ((df['Close'][sip_date_str].mean() - df['Low'].min()) / 2)
             txt = f"{sip_date_str}:\n{sip_text}" if sip_text else f"SIP {sip_date_str}"
             max_length = 50
             sentences = [txt[i:i+max_length] for i in range(0, len(txt), max_length)]
