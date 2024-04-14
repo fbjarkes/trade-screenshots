@@ -253,7 +253,7 @@ class Plotter:
 
     def daily_chart(self, df: pd.DataFrame, symbol: str, title:str,
                     from_date='', to_date='', 
-                    sip_marker: Optional[pd.Timestamp] = None,
+                    sip_date: Optional[pd.Timestamp] = None,
                     sip_text=''):
         fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.01, row_heights=[0.8, 0.2])        
         if from_date and to_date:
@@ -272,16 +272,16 @@ class Plotter:
         fig.add_trace(volume, row=2, col=1)
         
         annotations = []        
-        if sip_marker is not None:
+        if sip_date is not None:
             # remove hours/min from pd.datetime
-            marker_day = pd.to_datetime(sip_marker.date())
-            y_pos = df['Low'].min() + 1.0 * ((df['Close'][marker_day] - df['Low'].min()) / 2)
-            txt = f"{sip_marker}:\n{sip_text}" if sip_text else f"SIP {sip_marker}"
+            sip_date_str = f"{sip_date}"[:10]
+            y_pos = df['Low'].min() + 1.0 * ((df['Close'][sip_date_str] - df['Low'].min()) / 2)
+            txt = f"{sip_date_str}:\n{sip_text}" if sip_text else f"SIP {sip_date_str}"
             max_length = 50
             sentences = [txt[i:i+max_length] for i in range(0, len(txt), max_length)]
             formatted_text = '<br>'.join(sentences)
             font_size = 12
-            annotations.append(dict(x=marker_day, y=y_pos, text=formatted_text, ay=100, showarrow=True, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=font_size)))
+            annotations.append(dict(x=sip_date_str, y=y_pos, text=formatted_text, ay=100, showarrow=True, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=font_size)))
             
         
         if annotations:

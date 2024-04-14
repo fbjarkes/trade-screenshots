@@ -112,7 +112,7 @@ def create_daily_chart(outdir, sym, daily_df, date):
     start_date = date - pd.Timedelta(days=daily_days_before)
     end_date = date + pd.Timedelta(days=daily_days_after)
     daily_chart_df = daily_df.loc[f"{start_date}":f"{end_date}"]    
-    fig = plotter.daily_chart(daily_chart_df, sym, title=f"{sym} {date.strftime('%Y-%m-%d')} (daily)", sip_marker=date, sip_text='')
+    fig = plotter.daily_chart(daily_chart_df, sym, title=f"{sym} {date.strftime('%Y-%m-%d')} (daily)", sip_date=date, sip_text='')
     utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-daily", 1600, 900)
 
 def get_dataframes(config, first_date, last_date, timeframe, provider, paths, sym):

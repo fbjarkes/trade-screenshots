@@ -64,5 +64,5 @@ def handle_trades(start, timeframe, transform, provider, trades_file, filetype, 
             start_date = date - pd.Timedelta(days=daily_days_before)
             end_date = date + pd.Timedelta(days=daily_days_after)
             daily_chart_df = daily_df.loc[f"{start_date}":f"{end_date}"]
-            fig = Plotter().daily_chart(daily_chart_df, trade.symbol, title=f"{trade.symbol} {date} (daily)", sip_marker=date)
+            fig = Plotter().daily_chart(daily_chart_df, trade.symbol, title=f"{trade.symbol} {date} (daily)", sip_date=date)
             utils.write_file(fig, f"{outdir}/{trade.symbol}-{date_suffix}-daily", filetype, 1600, 900)
