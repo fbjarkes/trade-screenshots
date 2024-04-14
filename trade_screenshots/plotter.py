@@ -105,14 +105,21 @@ class Plotter:
             annotations.append(dict(x=x_pos, y=y_pos, text=sip_start_marker['text'], ay=-10, showarrow=False, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)))    
         
         if add_rth_markers:        
-            #TODO: assuming M15
             a = f"{df.index[0].date()} 09:30"
-            b = f"{df.index[0].date()} 15:45"
+            if df.attrs['timeframe'] == '1min':
+                b = f"{df.index[0].date()} 15:59"
+            if df.attrs['timeframe'] == '5min':
+                b = f"{df.index[0].date()} 15:55"
+            if df.attrs['timeframe'] == '15min':
+                b = f"{df.index[0].date()} 15:45"
+            if df.attrs['timeframe'] == '30min':
+                b = f"{df.index[0].date()} 15:30"
+            if df.attrs['timeframe'] == '60min':
+                b = f"{df.index[0].date()} 15:00"            
             y0 = df.loc[a:b]['Low'].min()
             y1 = df.loc[a:b]['High'].max()
-            shapes.append(dict(x0=pd.Timestamp(a), x1=pd.Timestamp(a), y0=y0, y1=y1, line_dash='dot', opacity=0.5))        
-            if tf == '15min':
-                shapes.append(dict(x0=pd.Timestamp(b), x1=pd.Timestamp(b), y0=y0, y1=y1.max(), line_dash='dot', opacity=0.5))  
+            shapes.append(dict(x0=pd.Timestamp(a), x1=pd.Timestamp(a), y0=y0, y1=y1, line_dash='dot', opacity=0.5))                    
+            shapes.append(dict(x0=pd.Timestamp(b), x1=pd.Timestamp(b), y0=y0, y1=y1.max(), line_dash='dot', opacity=0.5))
         
         if levels is not None:    
             #TODO: assuming M15 for intraday (e.g. 26 bars)        
