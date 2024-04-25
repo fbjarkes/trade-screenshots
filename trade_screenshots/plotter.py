@@ -192,6 +192,29 @@ class Plotter:
 
     
     def trade_chart(self, trade, df, tf, title, plot_indicators):
+        """
+        Generates a trade chart with candlestick, volume, and technical analysis indicators.
+
+        Parameters:
+        trade (Trade): The trade object. It should have the following properties:
+            - entry_date (datetime): The date and time when the trade was entered.
+            - exit_date (datetime): The date and time when the trade was exited.
+            - symbol (str): The symbol of the traded asset.
+            - value (float): The value of the trade.
+            - long_short (str): Indicates whether the trade was a 'LONG' or 'SHORT' trade.
+            - quantity (int): The quantity of the asset that was traded.
+            - entry_price (float): The price at which the asset was bought or sold at the start of the trade.
+            - exit_price (float): The price at which the asset was sold or bought back at the end of the trade.
+            - pnl (float): The profit or loss from the trade.
+            - comment (str): Any comments on the trade.
+        df (DataFrame): The data frame containing the price data.
+        tf (str): The timeframe of the data.
+        title (str): The title of the plot.
+        plot_indicators (list): A list of technical analysis indicators to plot.
+
+        Returns:
+        fig (Figure): The plotly figure containing the trade chart.
+        """
         days_before = self.plot_config['trade_bars'].get(tf, (100, 100))[0]
         days_after = self.plot_config['trade_bars'].get(tf, (100, 100))[1]
         if df.attrs['timeframe'] == 'day':
@@ -232,7 +255,7 @@ class Plotter:
             v_align = 100
 
         entry_text = f"SHORT {trade.quantity}@{trade.entry_price} (val: {trade.value:.0f})" if trade.long_short == 'SHORT' else f"LONG {trade.quantity}@{trade.entry_price} ({trade.value:.0f})"
-        exit_text = f"Exit {trade.quantity}@{trade.exit_price} (pnl: {trade.pnl:.1f})"
+        exit_text = f"Exit {trade.quantity}@{trade.exit_price} (pnl: {trade.pnl:.1f}) - {trade.comment}"
         #TODO: mark SL and target level?
         fig.add_annotation(
             x=trade.entry_date, y=trade.entry_price, text=entry_text, showarrow=True, arrowhead=1, ay=v_align, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)
