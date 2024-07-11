@@ -102,7 +102,7 @@ class Plotter:
         if sip_start_marker is not None:
             y_pos = sip_start_marker.get('y_pos', df['Low'].min())
             x_pos = sip_start_marker.get('x_pos', df.index[0])
-            annotations.append(dict(x=x_pos, y=y_pos, text=sip_start_marker['text'], ay=-10, showarrow=False, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)))    
+            annotations.append(dict(x=x_pos, y=y_pos, text=sip_start_marker['text'], ay=-100, showarrow=True, arrowhead=1, arrowwidth=1.5, arrowsize=1.5, font=dict(size=14)))    
         
         if add_rth_markers:        
             a = f"{df.index[0].date()} 09:30"
