@@ -6,23 +6,25 @@ import fire
 from trade_screenshots.sip_handler import SipConfig, handle_sip
 from trade_screenshots.symbols_handler import create_charts_day_by_day, create_charts
 from trade_screenshots.trades_handler import handle_trades
+from dotenv import load_dotenv
+load_dotenv()
 
 
-PATHS = {'tv': '~/Bardata/tradingview', 'alpaca-file': '/Users/fbjarkes/Bardata/alpaca-v2', 'alpaca-file-2016': '/Users/fbjarkes/Bardata/alpaca-v2/2016-2023'}
-
+#PATHS = {'tv': '~/Bardata/tradingview', 'alpaca-file': '/Users/fbjarkes/Bardata/alpaca-v2', 'alpaca-file-2016': '/Users/fbjarkes/Bardata/alpaca-v2/2016-2023'}
+PATHS = {'tv': os.getenv('TV'), 'alpaca-file': os.getenv('ALPACA_FILE_2016')}
 
 def main(
-    #start='',    
-    start='2024-03-14',                
-    timeframe="15min",  # only allow '<integer>min'
+    start='',    
+    #start='2024-03-14',                
+    timeframe="60min",  # only allow '<integer>min'
     provider="alpaca-file",
-    #symbol=None,
-    symbol='SOUN',    
-    sip_file=None,
+    symbol='',
+    #symbol='SOUN',    
+    sip_file='eps.txt',
     outdir='.',    
     days_before=1,
-    days_after=3,
-    daily_plot=False,
+    days_after=20,
+    daily_plot=True,
     transform=''
 ):
     """
@@ -58,6 +60,7 @@ def main(
         handle_sip(config)
     elif sip_file:
         config = SipConfig(
+            symbol='',
             start=start,
             timeframe=timeframe,
             symbols_file=sip_file,
