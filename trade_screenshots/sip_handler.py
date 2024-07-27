@@ -1,5 +1,11 @@
 from dataclasses import dataclass
-from typing import List
+import json
+import logging
+from multiprocessing import Pool
+import os
+from typing import Dict, List, Optional, Union
+
+import numpy as np
 from trade_screenshots.plotter import Plotter
 import trade_screenshots.utils as utils
 from trade_screenshots import utils_ta
@@ -7,6 +13,8 @@ from trade_screenshots.common import VALID_TIME_FRAMES, weekday_to_string
 
 
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 VALID_TA =  ['EMA10', 'EMA20', 'EMA50', 'VWAP']
@@ -40,6 +48,26 @@ def add_ta(sym, df, indicators, rth_only_ta=False):
             df = utils_ta.add_ta(sym, df, ['VWAP'], separate_by_day=True)
     return df
         
+        
+
+
+def get_dfs(config, first_date, last_date, timeframe, provider, paths, sym):
+    daily_df = None
+    # TODO: config.rth_only
+    df = utils.get_dataframe(provider, sym, first_date, '', timeframe, path=paths[provider])
+    if config.gen_daily:
+        daily_df = utils.get_dataframe(provider, sym, first_date, '', 'day', path=paths[provider])
+
+    print(f"{sym}: df start='{df.index[0]}' end='{df.index[-1]}'")
+    if config.gen_daily:
+        print(f"{sym}: daily_df start='{daily_df.index[0]}' end='{daily_df.index[-1]}'")
+                
+    if first_date < df.index[0] or last_date > df.index[-1]:
+        raise ValueError(f"{sym}: Missing data for {first_date} - {last_date} ({timeframe}) (df={df.index[0]} - {df.index[-1]})")
+    
+    return df, daily_df
+        
+
 # TODO StocksInPlay class
 def handle_sip(config: SipConfig):
     if config.symbol:
@@ -68,7 +96,7 @@ def handle_sip(config: SipConfig):
             first_date = dates_sorted[0] - pd.Timedelta(days=days_before)
             last_date = dates_sorted[-1] + pd.Timedelta(days=days_after)
             
-            df, daily_df = get_dataframes(config, first_date, last_date, timeframe, provider, paths, sym)
+            df, daily_df = get_dfs(config, first_date, last_date, timeframe, provider, paths, sym)
 
             for date in dates_sorted:
                 # TODO: parallelize this loop              
@@ -95,6 +123,7 @@ def handle_sip(config: SipConfig):
             traceback.print_exc()
             print(f"{sym}: {e}. Skipping.") 
 
+
 def create_intraday_chart(timeframe, outdir, ta_indicators, sym, date, chart_df, tf):
     chart_df = utils.transform_timeframe(chart_df, timeframe, tf)
     plotter = Plotter()                    
@@ -115,22 +144,4 @@ def create_daily_chart(outdir, sym, daily_df, date):
     fig = plotter.daily_chart(daily_chart_df, sym, title=f"{sym} {date.strftime('%Y-%m-%d')} (daily)", sip_date=date, sip_text='')
     utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-daily", 1600, 900)
 
-def get_dataframes(config, first_date, last_date, timeframe, provider, paths, sym):
-    daily_df = None
-    # TODO: config.rth_only
-    if provider == 'tv':
-        df = utils.get_dataframe_tv(first_date, timeframe, sym, paths['tv'])
-        if config.gen_daily:
-            daily_df = utils.get_dataframe_tv(first_date, 'day', sym, paths['tv'])
-    else:
-        df = utils.get_dataframe_alpaca(sym, timeframe, paths['alpaca-file'])
-        if config.gen_daily:
-            daily_df = utils.get_dataframe_alpaca(sym, 'day', paths['alpaca-file'])
-    print(f"{sym}: df start='{df.index[0]}' end='{df.index[-1]}'")
-    if config.gen_daily:
-        print(f"{sym}: daily_df start='{daily_df.index[0]}' end='{daily_df.index[-1]}'")
-                
-    if first_date < df.index[0] or last_date > df.index[-1]:
-        raise ValueError(f"{sym}: Missing data for {first_date} - {last_date} ({timeframe}) (df={df.index[0]} - {df.index[-1]})")
-    
-    return df, daily_df
+
