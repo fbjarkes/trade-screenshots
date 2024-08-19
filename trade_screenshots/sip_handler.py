@@ -112,11 +112,14 @@ def handle_sip(config: SipConfig):
                 # rth_0 = df.loc[f"{start_date} 09:30":f"{start_date} 15:45"]
                 # mid = (rth_0['High'].max() + rth_0['Low'].min()) / 2
                 # levels = {'today_mid': mid}            
-        
-                for tf in timeframes_to_plot:
-                    create_intraday_chart(timeframe, outdir, ta_indicators, sym, date, chart_df, tf)                
-                if config.gen_daily:
+
+                if timeframe == 'day':
                     create_daily_chart(outdir, sym, daily_df, date)
+                else:
+                    for tf in timeframes_to_plot:
+                        create_intraday_chart(timeframe, outdir, ta_indicators, sym, date, chart_df, tf)                
+                    if config.gen_daily:
+                        create_daily_chart(outdir, sym, daily_df, date)
                     
         except Exception as e:
             import traceback
