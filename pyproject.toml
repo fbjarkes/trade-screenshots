@@ -16,8 +16,7 @@ black = "*"
 ruff = "*"
 python-dotenv = "^1.0.0"
 aider = "^0.2.6"
-
-
+pandas-ta = "^0.4.0"  # Added pandas-ta
 
 [build-system]
 requires = ["poetry-core"]
