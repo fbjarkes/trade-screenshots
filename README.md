@@ -1,6 +1,9 @@
 # flashcard-charts
 Generate screenshots of intraday charts and trades, to flip through like flashcards
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for how the project fits together and
+[TODO.md](TODO.md) for the improvement backlog.
+
 ## Setup
 
 Requires [uv](https://docs.astral.sh/uv/). All dependencies (including
