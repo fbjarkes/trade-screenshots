@@ -1,9 +1,5 @@
 #!/usr/bin/env python
-import time
-import traceback
-import os
 import fire
-from trade_screenshots.sip_handler import SipConfig, handle_sip
 from trade_screenshots.symbols_handler import create_charts_day_by_day, create_charts
 from trade_screenshots.trades_handler import handle_trades
 

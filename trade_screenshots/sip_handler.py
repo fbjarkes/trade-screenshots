@@ -1,11 +1,7 @@
 from dataclasses import dataclass
-import json
 import logging
-from multiprocessing import Pool
-import os
-from typing import Dict, List, Optional, Union
+from typing import List
 
-import numpy as np
 from trade_screenshots.plotter import Plotter
 import trade_screenshots.utils as utils
 from trade_screenshots import utils_ta
@@ -32,9 +28,17 @@ class SipConfig:
     paths: dict
     days_before: int = 3
     days_after: int = 0    
-    gen_daily: bool = False    
+    gen_daily: bool = False
     ta_indicators: List[str] = None
+    chart_lib: str = 'plotly'  # 'plotly' or 'mplfinance'
     #rth_ta: bool = True
+
+
+def get_plotter(chart_lib: str):
+    if chart_lib in ('mpl', 'mplfinance', 'matplotlib'):
+        from trade_screenshots.plotter_mpl import MplPlotter
+        return MplPlotter()
+    return Plotter()
 
 def add_ta(sym, df, indicators, rth_only_ta=False):
     if not indicators:
@@ -113,13 +117,14 @@ def handle_sip(config: SipConfig):
                 # mid = (rth_0['High'].max() + rth_0['Low'].min()) / 2
                 # levels = {'today_mid': mid}            
 
+                plotter = get_plotter(config.chart_lib)
                 if timeframe == 'day':
-                    create_daily_chart(outdir, sym, daily_df, date)
+                    create_daily_chart(outdir, sym, daily_df, date, plotter)
                 else:
                     for tf in timeframes_to_plot:
-                        create_intraday_chart(timeframe, outdir, ta_indicators, sym, date, chart_df, tf)                
+                        create_intraday_chart(timeframe, outdir, ta_indicators, sym, date, chart_df, tf, plotter)
                     if config.gen_daily:
-                        create_daily_chart(outdir, sym, daily_df, date)
+                        create_daily_chart(outdir, sym, daily_df, date, plotter)
                     
         except Exception as e:
             import traceback
@@ -127,24 +132,24 @@ def handle_sip(config: SipConfig):
             print(f"{sym}: {e}. Skipping.") 
 
 
-def create_intraday_chart(timeframe, outdir, ta_indicators, sym, date, chart_df, tf):
+def create_intraday_chart(timeframe, outdir, ta_indicators, sym, date, chart_df, tf, plotter=None):
     chart_df = utils.transform_timeframe(chart_df, timeframe, tf)
-    plotter = Plotter()                    
-    fig = plotter.intraday_chart(chart_df, tf, sym, title=f"{sym} {date} ({tf})",                                                
+    plotter = plotter or Plotter()
+    fig = plotter.intraday_chart(chart_df, tf, sym, title=f"{sym} {date} ({tf})",
                                                 sip_start_marker={'text': f"SIP Start {date.strftime('%Y-%m-%d')}"},
                                                 #levels=levels
                                                 ta_indicators=ta_indicators
                                                 )
-    utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", 1600, 900)
+    plotter.save(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-{tf}", 1600, 900)
 
-def create_daily_chart(outdir, sym, daily_df, date):
-    plotter = Plotter()
+def create_daily_chart(outdir, sym, daily_df, date, plotter=None):
+    plotter = plotter or Plotter()
     daily_days_before = 100
     daily_days_after = 20
     start_date = date - pd.Timedelta(days=daily_days_before)
     end_date = date + pd.Timedelta(days=daily_days_after)
     daily_chart_df = daily_df.loc[f"{start_date}":f"{end_date}"]    
     fig = plotter.daily_chart(daily_chart_df, sym, title=f"{sym} {date.strftime('%Y-%m-%d')} (daily)", sip_date=date, sip_text='')
-    utils.write_file(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-daily", 1600, 900)
+    plotter.save(fig, f"{outdir}/{sym}-{date.strftime('%Y-%m-%d')}-daily", 1600, 900)
 
 
